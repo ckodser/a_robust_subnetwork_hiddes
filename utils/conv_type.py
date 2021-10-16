@@ -15,6 +15,27 @@ class GetSubnet(autograd.Function):
     def forward(ctx, scores, k):
         # Get the subnetwork by sorting the scores and using the top k%
         out = scores.clone()
+        _, idx = scores.flatten().sort()
+        j = int((1 - k) * scores.numel())
+
+        # flat_out and out access the same memory.
+        flat_out = out.flatten()
+        flat_out[idx[:j]] = 0
+        flat_out[idx[j:]] = 1
+
+        return out
+
+    @staticmethod
+    def backward(ctx, g):
+        # send the gradient g straight-through on the backward pass.
+        return g, None
+
+
+class GetLipschitzSubnet(autograd.Function):
+    @staticmethod
+    def forward(ctx, scores, k):
+        # Get the subnetwork by sorting the scores and using the top k%
+        out = scores.clone()
         _, idx = scores.flatten(start_dim=1).sort()
         neuron = scores.size()[0]
         j = int((1 - k) * (scores.numel() / neuron))
@@ -40,6 +61,10 @@ class SubnetConv(nn.Conv2d):
 
         self.scores = nn.Parameter(torch.Tensor(self.weight.size()))
         nn.init.kaiming_uniform_(self.scores, a=math.sqrt(5))
+        if kwargs.get("is_lipschitz", 'no') == 'yes':
+            self.sub_network_finder = GetLipschitzSubnet
+        else:
+            self.sub_network_finder = GetSubnet
 
     def set_prune_rate(self, prune_rate):
         self.prune_rate = prune_rate
@@ -49,7 +74,7 @@ class SubnetConv(nn.Conv2d):
         return self.scores.abs()
 
     def forward(self, x):
-        subnet = GetSubnet.apply(self.clamped_scores, self.prune_rate)
+        subnet = self.sub_network_finder.apply(self.clamped_scores, self.prune_rate)
         w = self.weight * subnet
         x = F.conv2d(
             x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
@@ -136,13 +161,11 @@ class FixedSubnetConv(nn.Conv2d):
 
     def set_subnet(self):
         output = self.clamped_scores().clone()
-        _, idx = self.clamped_scores().flatten(start_dim=1).abs().sort()
-        neuron = self.clamped_scores().size()[0]
-        p = int(self.prune_rate * (self.clamped_scores().numel() / neuron))
-        flat_oup = output.flatten(start_dim=1)
-        for i in range(neuron):
-            flat_oup[i, idx[i, :p]] = 0
-            flat_oup[i, idx[i, p:]] = 1
+        _, idx = self.clamped_scores().flatten().abs().sort()
+        p = int(self.prune_rate * self.clamped_scores().numel())
+        flat_oup = output.flatten()
+        flat_oup[idx[:p]] = 0
+        flat_oup[idx[p:]] = 1
         self.scores = torch.nn.Parameter(output)
         self.scores.requires_grad = False
 
@@ -158,3 +181,17 @@ class FixedSubnetConv(nn.Conv2d):
             x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
         )
         return x
+
+
+class FixedLipschitzSubnetConv(FixedSubnetConv):
+    def set_subnet(self):
+        output = self.clamped_scores().clone()
+        _, idx = self.clamped_scores().flatten(start_dim=1).abs().sort()
+        neuron = self.clamped_scores().size()[0]
+        p = int(self.prune_rate * (self.clamped_scores().numel() / neuron))
+        flat_oup = output.flatten(start_dim=1)
+        for i in range(neuron):
+            flat_oup[i, idx[i, :p]] = 0
+            flat_oup[i, idx[i, p:]] = 1
+        self.scores = torch.nn.Parameter(output)
+        self.scores.requires_grad = False

@@ -12,7 +12,7 @@ import torch.optim
 import torch.utils.data
 import torch.utils.data.distributed
 
-from utils.conv_type import FixedSubnetConv, SampleSubnetConv
+from utils.conv_type import FixedSubnetConv, SampleSubnetConv,FixedLipschitzSubnetConv
 from utils.logging import AverageMeter, ProgressMeter
 from utils.net_utils import (
     set_model_prune_rate,
@@ -286,7 +286,7 @@ def pretrained(args, model):
         print("=> no pretrained weights found at '{}'".format(args.pretrained))
 
     for n, m in model.named_modules():
-        if isinstance(m, FixedSubnetConv):
+        if isinstance(m, FixedSubnetConv) or isinstance(m, FixedLipschitzSubnetConv):
             m.set_subnet()
 
 
