@@ -14,18 +14,27 @@ import torch.autograd as autograd
 
 args = None
 
+all_shape=set()
+
 class GetSubnet(autograd.Function):
     @staticmethod
     def forward(ctx, scores, k):
         # Get the supermask by sorting the scores and using the top k%
         out = scores.clone()
-        _, idx = scores.flatten().sort()
-        j = int((1 - k) * scores.numel())
+        _, idx = scores.flatten(start_dim=1).sort()
+        j = int((1 - k) * scores.numel()/scores.size()[0])
+
+        # if scores.size() not in all_shape:
+        #     print(scores.size())
+        #     all_shape.add(scores.size())
+        # print(idx.numpy())
+        # print(idx[:,:j].numpy())
 
         # flat_out and out access the same memory.
-        flat_out = out.flatten()
-        flat_out[idx[:j]] = 0
-        flat_out[idx[j:]] = 1
+        flat_out = out.flatten(start_dim=1)
+        for i in range(scores.size()[0]):
+            flat_out[i,idx[i,:j]] = 0
+            flat_out[i,idx[i,j:]] = 1
 
         return out
 
