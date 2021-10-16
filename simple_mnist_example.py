@@ -11,7 +11,7 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import CosineAnnealingLR
 import torch.autograd as autograd
-
+import numpy as np
 args = None
 
 all_shape = set()
@@ -49,7 +49,8 @@ class SupermaskConv(nn.Conv2d):
 
         # NOTE: initialize the weights like this.
         nn.init.kaiming_normal_(self.weight, mode="fan_in", nonlinearity="relu")
-        self.weight.data = self.weight.data.sign() * (self.weight.size()[0] / (self.weight.numel() * (0.5)))
+        n_l=self.weight.numel()/self.weight.size()[0]
+        self.weight.data = self.weight.data.sign() * np.sqrt(2/n_l)
 
         # NOTE: turn the gradient on the weights off
         self.weight.requires_grad = False
@@ -73,7 +74,8 @@ class SupermaskLinear(nn.Linear):
 
         # NOTE: initialize the weights like this.
         nn.init.kaiming_normal_(self.weight, mode="fan_in", nonlinearity="relu")
-        self.weight.data = self.weight.data.sign() * (self.weight.size()[0] / (self.weight.numel() * (0.5)))
+        n_l = self.weight.numel() / self.weight.size()[0]
+        self.weight.data = self.weight.data.sign() * np.sqrt(2/n_l)
 
         # NOTE: turn the gradient on the weights off
         self.weight.requires_grad = False
