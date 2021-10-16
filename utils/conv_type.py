@@ -7,7 +7,6 @@ import math
 
 from args import args as parser_args
 
-
 DenseConv = nn.Conv2d
 
 
@@ -16,13 +15,15 @@ class GetSubnet(autograd.Function):
     def forward(ctx, scores, k):
         # Get the subnetwork by sorting the scores and using the top k%
         out = scores.clone()
-        _, idx = scores.flatten().sort()
-        j = int((1 - k) * scores.numel())
+        _, idx = scores.flatten(start_dim=1).sort()
+        neuron = scores.size()[0]
+        j = int((1 - k) * (scores.numel() / neuron))
 
         # flat_out and out access the same memory.
-        flat_out = out.flatten()
-        flat_out[idx[:j]] = 0
-        flat_out[idx[j:]] = 1
+        flat_out = out.flatten(start_dim=1)
+        for i in range(neuron):
+            flat_out[i, idx[i, :j]] = 0
+            flat_out[i, idx[i, j:]] = 1
 
         return out
 
@@ -98,7 +99,7 @@ class SampleSubnetConv(nn.Conv2d):
         self.scores = nn.Parameter(torch.Tensor(self.weight.size()))
         if parser_args.score_init_constant is not None:
             self.scores.data = (
-                torch.ones_like(self.scores) * parser_args.score_init_constant
+                    torch.ones_like(self.scores) * parser_args.score_init_constant
             )
         else:
             nn.init.kaiming_uniform_(self.scores, a=math.sqrt(5))
@@ -135,11 +136,13 @@ class FixedSubnetConv(nn.Conv2d):
 
     def set_subnet(self):
         output = self.clamped_scores().clone()
-        _, idx = self.clamped_scores().flatten().abs().sort()
-        p = int(self.prune_rate * self.clamped_scores().numel())
-        flat_oup = output.flatten()
-        flat_oup[idx[:p]] = 0
-        flat_oup[idx[p:]] = 1
+        _, idx = self.clamped_scores().flatten(start_dim=1).abs().sort()
+        neuron = self.clamped_scores().size()[0]
+        p = int(self.prune_rate * (self.clamped_scores().numel() / neuron))
+        flat_oup = output.flatten(start_dim=1)
+        for i in range(neuron):
+            flat_oup[i, idx[i, :p]] = 0
+            flat_oup[i, idx[i, p:]] = 1
         self.scores = torch.nn.Parameter(output)
         self.scores.requires_grad = False
 
@@ -155,4 +158,3 @@ class FixedSubnetConv(nn.Conv2d):
             x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
         )
         return x
-
