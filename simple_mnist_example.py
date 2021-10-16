@@ -14,7 +14,8 @@ import torch.autograd as autograd
 
 args = None
 
-all_shape=set()
+all_shape = set()
+
 
 class GetSubnet(autograd.Function):
     @staticmethod
@@ -22,19 +23,13 @@ class GetSubnet(autograd.Function):
         # Get the supermask by sorting the scores and using the top k%
         out = scores.clone()
         _, idx = scores.flatten(start_dim=1).sort()
-        j = int((1 - k) * scores.numel()/scores.size()[0])
-
-        # if scores.size() not in all_shape:
-        #     print(scores.size())
-        #     all_shape.add(scores.size())
-        # print(idx.numpy())
-        # print(idx[:,:j].numpy())
+        j = int((1 - k) * scores.numel() / scores.size()[0])
 
         # flat_out and out access the same memory.
         flat_out = out.flatten(start_dim=1)
-        for i in range(scores.size()[0]):
-            flat_out[i,idx[i,:j]] = 0
-            flat_out[i,idx[i,j:]] = 1
+        for i in range(scores.size()[0]):  # should optimized!
+            flat_out[i, idx[i, :j]] = 0
+            flat_out[i, idx[i, j:]] = 1
 
         return out
 
@@ -54,6 +49,7 @@ class SupermaskConv(nn.Conv2d):
 
         # NOTE: initialize the weights like this.
         nn.init.kaiming_normal_(self.weight, mode="fan_in", nonlinearity="relu")
+        self.weight.data = self.weight.data.sign() * (self.weight.size()[0] / (self.weight.numel() * (0.5)))
 
         # NOTE: turn the gradient on the weights off
         self.weight.requires_grad = False
@@ -66,6 +62,7 @@ class SupermaskConv(nn.Conv2d):
         )
         return x
 
+
 class SupermaskLinear(nn.Linear):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -76,6 +73,7 @@ class SupermaskLinear(nn.Linear):
 
         # NOTE: initialize the weights like this.
         nn.init.kaiming_normal_(self.weight, mode="fan_in", nonlinearity="relu")
+        self.weight.data = self.weight.data.sign() * (self.weight.size()[0] / (self.weight.numel() * (0.5)))
 
         # NOTE: turn the gradient on the weights off
         self.weight.requires_grad = False
@@ -86,11 +84,13 @@ class SupermaskLinear(nn.Linear):
         return F.linear(x, w, self.bias)
         return x
 
+
 # NOTE: not used here but we use NON-AFFINE Normalization!
 # So there is no learned parameters for your nomralization layer.
 class NonAffineBatchNorm(nn.BatchNorm2d):
     def __init__(self, dim):
         super(NonAffineBatchNorm, self).__init__(dim, affine=False)
+
 
 class Net(nn.Module):
     def __init__(self):
@@ -129,7 +129,7 @@ def train(model, device, train_loader, optimizer, criterion, epoch):
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.item()))
+                       100. * batch_idx / len(train_loader), loss.item()))
 
 
 def test(model, device, criterion, test_loader):
@@ -196,9 +196,9 @@ def main():
         batch_size=args.batch_size, shuffle=True, **kwargs)
     test_loader = torch.utils.data.DataLoader(
         datasets.MNIST(os.path.join(args.data, 'mnist'), train=False, transform=transforms.Compose([
-                           transforms.ToTensor(),
-                           transforms.Normalize((0.1307,), (0.3081,))
-                       ])),
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+        ])),
         batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
     model = Net().to(device)
