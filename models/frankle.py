@@ -12,19 +12,20 @@ class Conv2(nn.Module):
     def __init__(self):
         super(Conv2, self).__init__()
         builder = get_builder()
+        self.relu = nn.ReLU()
         self.convs = nn.Sequential(
             builder.conv3x3(3, 64, first_layer=True),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(64, 64),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2)),
         )
 
         self.linear = nn.Sequential(
             builder.conv1x1(64 * 16 * 16, 256),
-            nn.ReLU(),
+            self.relu,
             builder.conv1x1(256, 256),
-            nn.ReLU(),
+            self.relu,
             builder.conv1x1(256, 10),
         )
 
@@ -39,25 +40,25 @@ class Conv4(nn.Module):
     def __init__(self):
         super(Conv4, self).__init__()
         builder = get_builder()
-        self.relu = builder.activation()
+        self.relu = nn.ReLU()
         self.convs = nn.Sequential(
             builder.conv3x3(3, 64, first_layer=True),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(64, 64),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2)),
             builder.conv3x3(64, 128),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(128, 128),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2))
         )
 
         self.linear = nn.Sequential(
             builder.conv1x1(32 * 32 * 8, 256),
-            nn.ReLU(),
+            self.relu,
             builder.conv1x1(256, 256),
-            nn.ReLU(),
+            self.relu,
             builder.conv1x1(256, 10),
         )
 
@@ -72,29 +73,30 @@ class Conv6(nn.Module):
     def __init__(self):
         super(Conv6, self).__init__()
         builder = get_builder()
+        self.relu = nn.ReLU()
         self.convs = nn.Sequential(
             builder.conv3x3(3, 64, first_layer=True),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(64, 64),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2)),
             builder.conv3x3(64, 128),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(128, 128),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2)),
             builder.conv3x3(128, 256),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(256, 256),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2))
         )
 
         self.linear = nn.Sequential(
             builder.conv1x1(256 * 4 * 4, 256),
-            nn.ReLU(),
+            self.relu,
             builder.conv1x1(256, 256),
-            nn.ReLU(),
+            self.relu,
             builder.conv1x1(256, 10),
         )
 
@@ -109,34 +111,35 @@ class Conv8(nn.Module):
     def __init__(self):
         super(Conv8, self).__init__()
         builder = get_builder()
+        self.relu = nn.ReLU()
         self.convs = nn.Sequential(
             builder.conv3x3(3, 64, first_layer=True),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(64, 64),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2)),
             builder.conv3x3(64, 128),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(128, 128),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2)),
             builder.conv3x3(128, 256),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(256, 256),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2)),
             builder.conv3x3(256, 512),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(512, 512),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2))
         )
 
         self.linear = nn.Sequential(
             builder.conv1x1(512 * 2 * 2, 256),
-            nn.ReLU(),
+            self.relu,
             builder.conv1x1(256, 256),
-            nn.ReLU(),
+            self.relu,
             builder.conv1x1(256, 10),
         )
 
@@ -151,11 +154,12 @@ class FC(nn.Module):
     def __init__(self):
         super(FC, self).__init__()
         builder = get_builder()
+        self.relu = nn.ReLU()
         self.linear = nn.Sequential(
             builder.conv1x1(28 * 28, 300, first_layer=True),
-            nn.ReLU(),
+            self.relu,
             builder.conv1x1(300, 100),
-            nn.ReLU(),
+            self.relu,
             builder.conv1x1(100, 10),
         )
 
@@ -173,25 +177,25 @@ class Conv4Wide(nn.Module):
     def __init__(self):
         super(Conv4Wide, self).__init__()
         builder = get_builder()
-
+        self.relu = nn.ReLU()
         self.convs = nn.Sequential(
             builder.conv3x3(3, scale(64), first_layer=True),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(scale(64), scale(64)),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2)),
             builder.conv3x3(scale(64), scale(128)),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(scale(128), scale(128)),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2))
         )
 
         self.linear = nn.Sequential(
             builder.conv1x1(scale(128) * 8 * 8, scale(256)),
-            nn.ReLU(),
+            self.relu,
             builder.conv1x1(scale(256), scale(256)),
-            nn.ReLU(),
+            self.relu,
             builder.conv1x1(scale(256), 10),
         )
 
@@ -206,29 +210,30 @@ class Conv6Wide(nn.Module):
     def __init__(self):
         super(Conv6Wide, self).__init__()
         builder = get_builder()
+        self.relu = nn.ReLU()
         self.convs = nn.Sequential(
             builder.conv3x3(3, scale(64), first_layer=True),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(scale(64), scale(64)),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2)),
             builder.conv3x3(scale(64), scale(128)),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(scale(128), scale(128)),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2)),
             builder.conv3x3(scale(128), scale(256)),
-            nn.ReLU(),
+            self.relu,
             builder.conv3x3(scale(256), scale(256)),
-            nn.ReLU(),
+            self.relu,
             nn.MaxPool2d((2, 2))
         )
 
         self.linear = nn.Sequential(
             builder.conv1x1(scale(256) * 4 * 4, scale(256)),
-            nn.ReLU(),
+            self.relu,
             builder.conv1x1(scale(256), scale(256)),
-            nn.ReLU(),
+            self.relu,
             builder.conv1x1(scale(256), 10),
         )
 
