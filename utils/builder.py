@@ -82,6 +82,7 @@ class Builder(object):
         return self.bn_layer(planes)
 
     def activation(self):
+        print(args.nonlinearity)
         if args.nonlinearity == "relu":
             return (lambda: nn.ReLU(inplace=True))()
         else:
@@ -89,11 +90,9 @@ class Builder(object):
 
     def _init_conv(self, conv):
         if args.init == "one_lipschitz_signed_constant":
-            print(conv.weight.size())
+
             fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
-            print(fan, "fan in")
             fan = fan * (1 - args.prune_rate)
-            print(fan, "scaled fan in")
             std = 1/fan
             conv.weight.data = conv.weight.data.sign() * std
 

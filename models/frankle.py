@@ -7,6 +7,7 @@ from utils.builder import get_builder
 
 from args import args
 
+
 class Conv2(nn.Module):
     def __init__(self):
         super(Conv2, self).__init__()
@@ -38,6 +39,7 @@ class Conv4(nn.Module):
     def __init__(self):
         super(Conv4, self).__init__()
         builder = get_builder()
+        self.relu = builder.activation()
         self.convs = nn.Sequential(
             builder.conv3x3(3, 64, first_layer=True),
             nn.ReLU(),
@@ -102,6 +104,7 @@ class Conv6(nn.Module):
         out = self.linear(out)
         return out.squeeze()
 
+
 class Conv8(nn.Module):
     def __init__(self):
         super(Conv8, self).__init__()
@@ -161,6 +164,7 @@ class FC(nn.Module):
         out = self.linear(out)
         return out.squeeze()
 
+
 def scale(n):
     return int(n * args.width_mult)
 
@@ -184,7 +188,7 @@ class Conv4Wide(nn.Module):
         )
 
         self.linear = nn.Sequential(
-            builder.conv1x1(scale(128)*8*8, scale(256)),
+            builder.conv1x1(scale(128) * 8 * 8, scale(256)),
             nn.ReLU(),
             builder.conv1x1(scale(256), scale(256)),
             nn.ReLU(),
@@ -193,10 +197,9 @@ class Conv4Wide(nn.Module):
 
     def forward(self, x):
         out = self.convs(x)
-        out = out.view(out.size(0), scale(128)*8*8, 1, 1)
+        out = out.view(out.size(0), scale(128) * 8 * 8, 1, 1)
         out = self.linear(out)
         return out.squeeze()
-
 
 
 class Conv6Wide(nn.Module):
