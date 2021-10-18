@@ -286,7 +286,7 @@ def pretrained(args, model):
         print("=> no pretrained weights found at '{}'".format(args.pretrained))
 
     for n, m in model.named_modules():
-        if isinstance(m, FixedSubnetConv) or isinstance(m, FixedLipschitzSubnetConv):
+        if isinstance(m, FixedSubnetConv):
             m.set_subnet()
 
 

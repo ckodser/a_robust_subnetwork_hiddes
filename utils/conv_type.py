@@ -31,7 +31,7 @@ class GetSubnet(autograd.Function):
         return g, None
 
 
-class GetLipschitzSubnet(autograd.Function):
+class GetLipschitzSubnet(GetSubnet):
     @staticmethod
     def forward(ctx, scores, k):
         # Get the subnetwork by sorting the scores and using the top k%
@@ -48,11 +48,6 @@ class GetLipschitzSubnet(autograd.Function):
 
         return out
 
-    @staticmethod
-    def backward(ctx, g):
-        # send the gradient g straight-through on the backward pass.
-        return g, None
-
 
 # Not learning weights, finding subnet
 class SubnetConv(nn.Conv2d):
@@ -61,10 +56,6 @@ class SubnetConv(nn.Conv2d):
 
         self.scores = nn.Parameter(torch.Tensor(self.weight.size()))
         nn.init.kaiming_uniform_(self.scores, a=math.sqrt(5))
-        if kwargs.get("is_lipschitz", 'no') == 'yes':
-            self.sub_network_finder = GetLipschitzSubnet
-        else:
-            self.sub_network_finder = GetSubnet
 
     def set_prune_rate(self, prune_rate):
         self.prune_rate = prune_rate
@@ -74,13 +65,23 @@ class SubnetConv(nn.Conv2d):
         return self.scores.abs()
 
     def forward(self, x):
-        subnet = self.sub_network_finder.apply(self.clamped_scores, self.prune_rate)
+        subnet = GetSubnet.apply(self.clamped_scores, self.prune_rate)
         w = self.weight * subnet
         x = F.conv2d(
             x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
         )
         return x
 
+
+# Not learning weights, finding subnet
+class LipschitzSubnetConv(SubnetConv):
+    def forward(self, x):
+        subnet = GetLipschitzSubnet.apply(self.clamped_scores, self.prune_rate)
+        w = self.weight * subnet
+        x = F.conv2d(
+            x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
+        )
+        return x
 
 """
 Sample Based Sparsification
