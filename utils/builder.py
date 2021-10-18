@@ -94,7 +94,7 @@ class Builder(object):
             std = 1/fan
             conv.weight.data = conv.weight.data.sign() * std
 
-        if args.init == "signed_constant":
+        elif args.init == "signed_constant":
 
             fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
             if args.scale_fan:
