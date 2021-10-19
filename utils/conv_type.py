@@ -2,7 +2,6 @@ import torch
 import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
-
 import math
 
 from args import args as parser_args
@@ -31,24 +30,6 @@ class GetSubnet(autograd.Function):
         return g, None
 
 
-class GetLipschitzSubnet(GetSubnet):
-    @staticmethod
-    def forward(ctx, scores, k):
-        # Get the subnetwork by sorting the scores and using the top k%
-        out = scores.clone()
-        _, idx = scores.flatten(start_dim=1).sort()
-        neuron = scores.size()[0]
-        j = int((1 - k) * (scores.numel() / neuron))
-
-        # flat_out and out access the same memory.
-        flat_out = out.flatten(start_dim=1)
-        for i in range(neuron):
-            flat_out[i, idx[i, :j]] = 0
-            flat_out[i, idx[i, j:]] = 1
-
-        return out
-
-
 # Not learning weights, finding subnet
 class SubnetConv(nn.Conv2d):
     def __init__(self, *args, **kwargs):
@@ -72,16 +53,6 @@ class SubnetConv(nn.Conv2d):
         )
         return x
 
-
-# Not learning weights, finding subnet
-class LipschitzSubnetConv(SubnetConv):
-    def forward(self, x):
-        subnet = GetLipschitzSubnet.apply(self.clamped_scores, self.prune_rate)
-        w = self.weight * subnet
-        x = F.conv2d(
-            x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
-        )
-        return x
 
 """
 Sample Based Sparsification
@@ -178,6 +149,35 @@ class FixedSubnetConv(nn.Conv2d):
 
     def forward(self, x):
         w = self.get_subnet()
+        x = F.conv2d(
+            x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
+        )
+        return x
+
+
+class GetLipschitzSubnet(GetSubnet):
+    @staticmethod
+    def forward(ctx, scores, k):
+        # Get the subnetwork by sorting the scores and using the top k%
+        out = scores.clone()
+        _, idx = scores.flatten(start_dim=1).sort()
+        neuron = scores.size()[0]
+        j = int((1 - k) * (scores.numel() / neuron))
+
+        # flat_out and out access the same memory.
+        flat_out = out.flatten(start_dim=1)
+        for i in range(neuron):
+            flat_out[i, idx[i, :j]] = 0
+            flat_out[i, idx[i, j:]] = 1
+
+        return out
+
+
+# Not learning weights, finding subnet
+class LipschitzSubnetConv(SubnetConv):
+    def forward(self, x):
+        subnet = GetLipschitzSubnet.apply(self.clamped_scores, self.prune_rate)
+        w = self.weight * subnet
         x = F.conv2d(
             x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
         )
