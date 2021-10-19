@@ -81,7 +81,8 @@ class Builder(object):
     def batchnorm(self, planes, last_bn=False, first_layer=False):
         return self.bn_layer(planes)
 
-    def max_pool_2d(self):
+
+    def max_pool(self):
         if args.pooling == "max_pooling":
             return nn.MaxPool2d((2, 2))
         else:
