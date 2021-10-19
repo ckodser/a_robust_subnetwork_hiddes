@@ -180,6 +180,9 @@ def parse_arguments():
     parser.add_argument(
         "--nonlinearity", default="relu", help="Nonlinearity used by initialization"
     )
+    parser.add_argument(
+        "--pooling", default="max_pooling", help=" pooling used to reduce size of output of CNN"
+    )
     parser.add_argument("--bn-type", default=None, help="BatchNorm type")
     parser.add_argument(
         "--init", default="kaiming_normal", help="Weight initialization modifications"

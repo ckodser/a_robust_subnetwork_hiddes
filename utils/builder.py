@@ -81,19 +81,24 @@ class Builder(object):
     def batchnorm(self, planes, last_bn=False, first_layer=False):
         return self.bn_layer(planes)
 
+    def max_pool_2d(self):
+        if args.pooling == "max_pooling":
+            return nn.MaxPool2d((2, 2))
+        else:
+            raise ValueError(f"{args.pooling} is not an pooling option!")
+
     def activation(self):
-        print(args.nonlinearity)
         if args.nonlinearity == "relu":
             return (lambda: nn.ReLU(inplace=True))()
         else:
-            raise ValueError(f"{args.nonlinearity} is not an initialization option!")
+            raise ValueError(f"{args.nonlinearity} is not an activation option!")
 
     def _init_conv(self, conv):
         if args.init == "one_lipschitz_signed_constant":
 
             fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
             fan = fan * (1 - args.prune_rate)
-            std = 1/fan
+            std = 1 / fan
             conv.weight.data = conv.weight.data.sign() * std
 
         elif args.init == "signed_constant":
@@ -150,7 +155,6 @@ class Builder(object):
 
 
 def get_builder():
-
     print("==> Conv Type: {}".format(args.conv_type))
     print("==> BN Type: {}".format(args.bn_type))
 

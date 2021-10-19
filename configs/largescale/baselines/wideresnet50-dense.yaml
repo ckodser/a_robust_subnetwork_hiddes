@@ -25,6 +25,7 @@ bn_type: LearnedBatchNorm
 init: kaiming_normal
 mode: fan_in
 nonlinearity: relu
+pooling: max_pooling
 
 # ===== Hardware setup ===== #
 workers: 20

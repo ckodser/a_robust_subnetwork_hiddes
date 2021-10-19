@@ -26,6 +26,7 @@ prune_rate: -1 # Override
 init: kaiming_normal
 mode: fan_in
 nonlinearity: relu
+pooling: max_pooling
 
 # ===== Hardware setup ===== #
 workers: 20

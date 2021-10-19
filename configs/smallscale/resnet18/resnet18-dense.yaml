@@ -23,6 +23,7 @@ bn_type: LearnedBatchNorm
 init: kaiming_normal
 mode: fan_in
 nonlinearity: relu
+pooling: max_pooling
 prune_rate: 0.0
 
 # ===== Hardware setup ===== #

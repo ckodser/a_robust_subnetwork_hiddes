@@ -24,6 +24,7 @@ init: kaiming_normal
 freeze_weights: True
 mode: fan_in
 nonlinearity: relu
+pooling: max_pooling
 prune_rate: -1
 
 # ===== Hardware setup ===== #

@@ -26,6 +26,7 @@ prune_rate: -1 # Override
 init: signed_constant
 mode: fan_in
 nonlinearity: relu
+pooling: max_pooling
 scale_fan: True
 
 # ===== Hardware setup ===== #
