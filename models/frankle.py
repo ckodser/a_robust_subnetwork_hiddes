@@ -40,7 +40,7 @@ class Conv4(nn.Module):
     def __init__(self):
         super(Conv4, self).__init__()
         builder = get_builder()
-        self.relu = nn.ReLU()
+        self.relu = builder.activation()
         self.convs = nn.Sequential(
             builder.conv3x3(3, 64, first_layer=True),
             self.relu,
