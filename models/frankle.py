@@ -12,7 +12,7 @@ class Conv2(nn.Module):
     def __init__(self):
         super(Conv2, self).__init__()
         builder = get_builder()
-        self.relu = nn.ReLU()
+        self.relu = builder.activation()
         self.convs = nn.Sequential(
             builder.conv3x3(3, 64, first_layer=True),
             self.relu,
@@ -73,7 +73,7 @@ class Conv6(nn.Module):
     def __init__(self):
         super(Conv6, self).__init__()
         builder = get_builder()
-        self.relu = nn.ReLU()
+        self.relu = builder.activation()
         self.convs = nn.Sequential(
             builder.conv3x3(3, 64, first_layer=True),
             self.relu,
@@ -111,7 +111,7 @@ class Conv8(nn.Module):
     def __init__(self):
         super(Conv8, self).__init__()
         builder = get_builder()
-        self.relu = nn.ReLU()
+        self.relu = builder.activation()
         self.convs = nn.Sequential(
             builder.conv3x3(3, 64, first_layer=True),
             self.relu,
@@ -154,7 +154,7 @@ class FC(nn.Module):
     def __init__(self):
         super(FC, self).__init__()
         builder = get_builder()
-        self.relu = nn.ReLU()
+        self.relu = builder.activation()
         self.linear = nn.Sequential(
             builder.conv1x1(28 * 28, 300, first_layer=True),
             self.relu,
@@ -177,7 +177,7 @@ class Conv4Wide(nn.Module):
     def __init__(self):
         super(Conv4Wide, self).__init__()
         builder = get_builder()
-        self.relu = nn.ReLU()
+        self.relu = builder.activation()
         self.convs = nn.Sequential(
             builder.conv3x3(3, scale(64), first_layer=True),
             self.relu,
@@ -210,7 +210,7 @@ class Conv6Wide(nn.Module):
     def __init__(self):
         super(Conv6Wide, self).__init__()
         builder = get_builder()
-        self.relu = nn.ReLU()
+        self.relu = builder.activation()
         self.convs = nn.Sequential(
             builder.conv3x3(3, scale(64), first_layer=True),
             self.relu,
