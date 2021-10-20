@@ -51,14 +51,14 @@ class Net(nn.Module):
             self.max_pool_2d,
         )
         self.linear = nn.Sequential(
-            builder.conv1x1(9216, 128),
+            builder.conv1x1(12544, 128),
             self.relu,
             builder.conv1x1(128, 10),
         )
 
     def forward(self, x):
         out = self.convs(x)
-        out = out.view(out.size(0), 8192, 1, 1)
+        out = out.view(out.size(0), 12544, 1, 1)
         out = self.linear(out)
         return out.squeeze()
 
