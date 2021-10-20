@@ -13,7 +13,7 @@ class Conv2(nn.Module):
         super(Conv2, self).__init__()
         builder = get_builder()
         self.relu = builder.activation()
-        self.max_pool_2d=builder.max_pool()
+        self.max_pool_2d = builder.max_pool()
         self.convs = nn.Sequential(
             builder.conv3x3(3, 64, first_layer=True),
             self.relu,
@@ -33,6 +33,32 @@ class Conv2(nn.Module):
     def forward(self, x):
         out = self.convs(x)
         out = out.view(out.size(0), 64 * 16 * 16, 1, 1)
+        out = self.linear(out)
+        return out.squeeze()
+
+
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        builder = get_builder()
+        self.relu = builder.activation()
+        self.max_pool_2d = builder.max_pool()
+        self.convs = nn.Sequential(
+            builder.conv3x3(1, 32, first_layer=True),
+            self.relu,
+            builder.conv3x3(32, 64),
+            self.relu,
+            self.max_pool_2d,
+        )
+        self.linear = nn.Sequential(
+            builder.conv1x1(9216, 128),
+            self.relu,
+            builder.conv1x1(128, 10),
+        )
+
+    def forward(self, x):
+        out = self.convs(x)
+        out = out.view(out.size(0), 8192, 1, 1)
         out = self.linear(out)
         return out.squeeze()
 
