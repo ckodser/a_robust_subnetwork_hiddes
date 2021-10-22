@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 
 def accuracy(output, target, topk=(1,)):
@@ -21,6 +22,9 @@ def accuracy(output, target, topk=(1,)):
 def robustness(output, target, percentile):
     with torch.no_grad():
         confidence, pred = output.topk(2, 1, True, True)
-
-        print("confidence size:",confidence.size(), "pred size:",pred.size(),"batch size", target.size(0))
-        return 0,0,0
+        certified_robustness = confidence[:, 1] - confidence[:, 0]
+        dists = certified_robustness.quantile(np.array(percentile), dim=1)
+        print(dists.size())
+        print(dists)
+        print("confidence size:", confidence.size(), "pred size:", pred.size(), "batch size", target.size(0))
+        return 0, 0, 0
