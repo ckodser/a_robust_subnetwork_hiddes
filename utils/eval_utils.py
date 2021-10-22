@@ -23,6 +23,6 @@ def robustness(output, target, percentile):
     with torch.no_grad():
         confidence, pred = output.topk(2, 1, True, True)
         certified_robustness = confidence[:, 1] - confidence[:, 0]
-        certified_robustness, _ = torch.sort(certified_robustness, dim=1)
+        certified_robustness, _ = torch.sort(certified_robustness)
         print(certified_robustness.numpy()[:8])
         return 0, 0, 0
