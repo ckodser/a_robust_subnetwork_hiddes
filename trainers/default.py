@@ -2,7 +2,7 @@ import time
 import torch
 import tqdm
 
-from utils.eval_utils import accuracy
+from utils.eval_utils import accuracy, robustness
 from utils.logging import AverageMeter, ProgressMeter
 
 
@@ -71,8 +71,13 @@ def validate(val_loader, model, criterion, args, writer, epoch):
     losses = AverageMeter("Loss", ":.3f", write_val=False)
     top1 = AverageMeter("Acc@1", ":6.2f", write_val=False)
     top5 = AverageMeter("Acc@5", ":6.2f", write_val=False)
+    # if for each test we calculate max(class)-max2(class) we get a number which we want to increase
+    # q1_dist print first quarter value and se on.
+    q1_dist = AverageMeter(" 25% robustness", ":6.2f", write_val=False)
+    q2_dist = AverageMeter(" 50% robustness", ":6.2f", write_val=False)
+    q3_dist = AverageMeter(" 75% robustness", ":6.2f", write_val=False)
     progress = ProgressMeter(
-        len(val_loader), [batch_time, losses, top1, top5], prefix="Test: "
+        len(val_loader), [batch_time, losses, top1, top5, q1_dist, q2_dist, q3_dist], prefix="Test: "
     )
 
     # switch to evaluate mode
@@ -98,6 +103,11 @@ def validate(val_loader, model, criterion, args, writer, epoch):
             losses.update(loss.item(), images.size(0))
             top1.update(acc1.item(), images.size(0))
             top5.update(acc5.item(), images.size(0))
+
+            q1,q2,q3 = robustness(output, target, persentile=(25,50,75))
+            q1_dist.update(q1.item(), images.size(0))
+            q2_dist.update(q2.item(), images.size(0))
+            q3_dist.update(q3.item(), images.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)

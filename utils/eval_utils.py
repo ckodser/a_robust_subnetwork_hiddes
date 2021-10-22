@@ -16,3 +16,11 @@ def accuracy(output, target, topk=(1,)):
             correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
+
+
+def robustness(output, target, percentile):
+    with torch.no_grad():
+        confidence, pred = output.topk(2, 1, True, True)
+
+        print("confidence size:",confidence.size(), "pred size:",pred.size(),"batch size", target.size(0))
+        return 0,0,0
