@@ -104,7 +104,7 @@ def validate(val_loader, model, criterion, args, writer, epoch):
             top1.update(acc1.item(), images.size(0))
             top5.update(acc5.item(), images.size(0))
 
-            q1,q2,q3 = robustness(output, target, persentile=(25,50,75))
+            q1,q2,q3 = robustness(output, target, percentile=(25,50,75))
             q1_dist.update(q1.item(), images.size(0))
             q2_dist.update(q2.item(), images.size(0))
             q3_dist.update(q3.item(), images.size(0))
