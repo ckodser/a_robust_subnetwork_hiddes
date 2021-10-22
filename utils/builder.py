@@ -7,6 +7,8 @@ import torch.nn as nn
 import utils.conv_type
 import utils.bn_type
 
+from utils.activation_type import MaxMin
+
 
 class Builder(object):
     def __init__(self, conv_layer, bn_layer, first_layer=None):
@@ -81,7 +83,6 @@ class Builder(object):
     def batchnorm(self, planes, last_bn=False, first_layer=False):
         return self.bn_layer(planes)
 
-
     def max_pool(self):
         if args.pooling == "max_pooling":
             return nn.MaxPool2d((2, 2))
@@ -91,6 +92,8 @@ class Builder(object):
     def activation(self):
         if args.nonlinearity == "relu":
             return (lambda: nn.ReLU(inplace=True))()
+        elif args.nonlinearity == "MaxMin":
+            return MaxMin()
         else:
             raise ValueError(f"{args.nonlinearity} is not an activation option!")
 
