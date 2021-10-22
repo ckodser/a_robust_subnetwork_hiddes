@@ -5,7 +5,6 @@ import tqdm
 from utils.eval_utils import accuracy, robustness
 from utils.logging import AverageMeter, ProgressMeter
 
-
 __all__ = ["train", "validate", "modifier"]
 
 
@@ -28,7 +27,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args, writer):
     num_batches = len(train_loader)
     end = time.time()
     for i, (images, target) in tqdm.tqdm(
-        enumerate(train_loader), ascii=True, total=len(train_loader)
+            enumerate(train_loader), ascii=True, total=len(train_loader)
     ):
         # measure data loading time
         data_time.update(time.time() - end)
@@ -86,7 +85,7 @@ def validate(val_loader, model, criterion, args, writer, epoch):
     with torch.no_grad():
         end = time.time()
         for i, (images, target) in tqdm.tqdm(
-            enumerate(val_loader), ascii=True, total=len(val_loader)
+                enumerate(val_loader), ascii=True, total=len(val_loader)
         ):
             if args.gpu is not None:
                 images = images.cuda(args.gpu, non_blocking=True)
@@ -104,7 +103,7 @@ def validate(val_loader, model, criterion, args, writer, epoch):
             top1.update(acc1.item(), images.size(0))
             top5.update(acc5.item(), images.size(0))
 
-            q1,q2,q3 = robustness(output, target, percentile=(25,50,75))
+            q1, q2, q3 = robustness(output, target, percentile=(0.25, 0.50, 0.75))
             q1_dist.update(q1.item(), images.size(0))
             q2_dist.update(q2.item(), images.size(0))
             q3_dist.update(q3.item(), images.size(0))
@@ -122,6 +121,7 @@ def validate(val_loader, model, criterion, args, writer, epoch):
             progress.write_to_tensorboard(writer, prefix="test", global_step=epoch)
 
     return top1.avg, top5.avg
+
 
 def modifier(args, epoch, model):
     return

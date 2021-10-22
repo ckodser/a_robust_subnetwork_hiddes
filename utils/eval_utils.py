@@ -21,10 +21,12 @@ def accuracy(output, target, topk=(1,)):
 
 def robustness(output, target, percentile):
     with torch.no_grad():
-        percentile = (np.array(percentile) * output.size(0)).astype(np.int)
+        percentile = (np.array(percentile) * target.size(0)).astype(np.int)
         confidence, pred = output.topk(2, 1, True, True)
         certified_robustness = confidence[:, 0] - confidence[:, 1]
         certified_robustness, _ = torch.sort(certified_robustness)
-        print(certified_robustness)
-        print(certified_robustness[percentile])
-        return certified_robustness[percentile]
+
+        res = []
+        for k in percentile:
+            res.append(certified_robustness[k])
+        return res
