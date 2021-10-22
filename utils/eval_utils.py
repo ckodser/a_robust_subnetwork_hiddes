@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-
+import math
 
 def accuracy(output, target, topk=(1,)):
     """Computes the accuracy over the k top predictions for the specified values of k"""
@@ -28,5 +28,5 @@ def robustness(output, target, percentile):
 
         res = []
         for k in percentile:
-            res.append(certified_robustness[k])
+            res.append(math.log(certified_robustness[k]))
         return res
