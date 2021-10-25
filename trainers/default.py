@@ -72,9 +72,9 @@ def validate(val_loader, model, criterion, args, writer, epoch):
     top5 = AverageMeter("Acc@5", ":6.2f", write_val=False)
     # if for each test we calculate max(class)-max2(class) we get a number which we want to increase
     # q1_dist print first quarter value and se on.
-    q1_dist = AverageMeter(" 25% robustness", ":6.2f", write_val=False)
-    q2_dist = AverageMeter(" 50% robustness", ":6.2f", write_val=False)
-    q3_dist = AverageMeter(" 75% robustness", ":6.2f", write_val=False)
+    q1_dist = AverageMeter(" 30% robustness", ":6.2f", write_val=False)
+    q2_dist = AverageMeter(" 20% robustness", ":6.2f", write_val=False)
+    q3_dist = AverageMeter(" 10% robustness", ":6.2f", write_val=False)
     progress = ProgressMeter(
         len(val_loader), [batch_time, losses, top1, top5, q1_dist, q2_dist, q3_dist], prefix="Test: "
     )
@@ -103,7 +103,7 @@ def validate(val_loader, model, criterion, args, writer, epoch):
             top1.update(acc1.item(), images.size(0))
             top5.update(acc5.item(), images.size(0))
 
-            q1, q2, q3 = robustness(output, target, percentile=(0.25, 0.50, 0.75))
+            q1, q2, q3 = robustness(output, target, percentile=(0.70, 0.80, 0.90))
             q1_dist.update(q1.item(), images.size(0))
             q2_dist.update(q2.item(), images.size(0))
             q3_dist.update(q3.item(), images.size(0))

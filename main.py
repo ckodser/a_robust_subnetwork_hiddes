@@ -63,7 +63,10 @@ def main_worker(args):
     lr_policy = get_policy(args.lr_policy)(optimizer, args)
 
     if args.label_smoothing is None:
-        criterion = nn.CrossEntropyLoss().cuda()
+        if args.marginal_learning is None:
+            criterion = nn.CrossEntropyLoss().cuda()
+        else:
+            criterion = nn.MultiMarginLoss(margin=args.marginal_learning)
     else:
         criterion = LabelSmoothing(smoothing=args.label_smoothing)
 
