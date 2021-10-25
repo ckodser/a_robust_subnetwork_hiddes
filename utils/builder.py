@@ -98,6 +98,13 @@ class Builder(object):
             raise ValueError(f"{args.nonlinearity} is not an activation option!")
 
     def _init_conv(self, conv):
+        if args.init == "one_lipschitz_unsigned_constant":
+
+            fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
+            fan = fan * (1 - args.prune_rate)
+            std = 1 / fan
+            conv.weight.data = torch.ones_like(conv.weight.data) * std
+
         if args.init == "one_lipschitz_signed_constant":
 
             fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
