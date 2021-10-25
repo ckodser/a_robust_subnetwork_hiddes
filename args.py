@@ -26,6 +26,9 @@ def parse_arguments():
         "--log-dir", help="Where to save the runs. If None use ./runs", default=None
     )
     parser.add_argument(
+        "--marginal_learning", help="use hinge loss with margin equal to this number", default=None
+    )
+    parser.add_argument(
         "-j",
         "--workers",
         default=20,
