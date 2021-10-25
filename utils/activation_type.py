@@ -8,9 +8,9 @@ class MaxMin(nn.Module):
         super(MaxMin, self).__init__()
 
     def forward(self, x):
-        y = torch.reshape(x, (x.shape[0], x.shape[1] / 2, 2, x.shape[2], x.shape[3]))
-        maxes = torch.max(y, 2)
-        mins = torch.min(y, 2)
+        y = torch.reshape(x, (x.shape[0], x.shape[1] // 2, 2, x.shape[2], x.shape[3]))
+        maxes, _ = torch.max(y, 2)
+        mins, _ = torch.min(y, 2)
         maxmin = torch.cat((maxes, mins), dim=1)
         return maxmin
 
