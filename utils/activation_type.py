@@ -3,12 +3,11 @@ import torch
 
 class MaxMin(nn.Module):
     # code from https://github.com/cemanil/LNets/blob/master/lnets/models/activations/maxout.py
-    def __init__(self, num_units, axis=-1):
+    def __init__(self):
         super(MaxMin, self).__init__()
-        self.num_units = num_units
-        self.axis = axis
 
     def forward(self, x):
+
         maxes = maxout(x, self.num_units, self.axis)
         mins = minout(x, self.num_units, self.axis)
         maxmin = torch.cat((maxes, mins), dim=1)
