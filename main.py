@@ -66,7 +66,7 @@ def main_worker(args):
         if args.marginal_learning is None:
             criterion = nn.CrossEntropyLoss().cuda()
         else:
-            criterion = nn.MultiMarginLoss(margin=args.marginal_learning)
+            criterion = nn.MultiMarginLoss(margin=float(args.marginal_learning))
     else:
         criterion = LabelSmoothing(smoothing=args.label_smoothing)
 
