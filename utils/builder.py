@@ -105,7 +105,7 @@ class Builder(object):
             std = 1 / fan
             conv.weight.data = torch.ones_like(conv.weight.data) * std
 
-        if args.init == "one_lipschitz_signed_constant":
+        elif args.init == "one_lipschitz_signed_constant":
 
             fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
             fan = fan * (1 - args.prune_rate)
