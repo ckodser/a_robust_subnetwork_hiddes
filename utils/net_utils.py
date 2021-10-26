@@ -38,13 +38,15 @@ def freeze_model_weights(model):
                 print(f"==> Setting gradient of {n}.weight to None")
                 m.weight.grad = None
 
-            if hasattr(m, "bias") and m.bias is not None:
-                print(f"==> No gradient to {n}.bias")
-                m.bias.requires_grad = False
+            # in our usage there is no need for setting require_grad to false to bias parameters
 
-                if m.bias.grad is not None:
-                    print(f"==> Setting gradient of {n}.bias to None")
-                    m.bias.grad = None
+            # if hasattr(m, "bias") and m.bias is not None:
+            #     print(f"==> No gradient to {n}.bias")
+            #     m.bias.requires_grad = False
+            #
+            #     if m.bias.grad is not None:
+            #         print(f"==> Setting gradient of {n}.bias to None")
+            #         m.bias.grad = None
 
 
 def freeze_model_subnet(model):
