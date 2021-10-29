@@ -209,7 +209,7 @@ class FixFanInSubnetConv(SubnetConv):
 
 
 # Not learning weights, finding subnet
-class FixLipschitzSubnetConv(SubnetConv):
+class LipschitzSubnetConv(SubnetConv):
     def forward(self, x):
         subnet = GetLipschitzSubnet.apply(self.clamped_scores, self.prune_rate, self.weight)
         w = self.weight * subnet
