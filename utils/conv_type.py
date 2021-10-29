@@ -11,7 +11,7 @@ DenseConv = nn.Conv2d
 
 class GetSubnet(autograd.Function):
     @staticmethod
-    def forward(ctx, scores, k):
+    def forward(ctx, scores, k, weight):
         # Get the subnetwork by sorting the scores and using the top k%
         out = scores.clone()
         _, idx = scores.flatten().sort()
@@ -27,7 +27,7 @@ class GetSubnet(autograd.Function):
     @staticmethod
     def backward(ctx, g):
         # send the gradient g straight-through on the backward pass.
-        return g, None
+        return g, None, None
 
 
 # Not learning weights, finding subnet
@@ -157,7 +157,7 @@ class FixedSubnetConv(nn.Conv2d):
 
 class GetFixFanInSubnet(GetSubnet):
     @staticmethod
-    def forward(ctx, scores, k):
+    def forward(ctx, scores, k, weight):
         # Get the subnetwork by sorting the scores and using the top k%
         out = scores.clone()
         _, idx = scores.flatten(start_dim=1).sort()
@@ -172,10 +172,46 @@ class GetFixFanInSubnet(GetSubnet):
 
         return out
 
+
+class GetLipschitzSubnet(GetSubnet):
+    @staticmethod
+    def forward(ctx, scores, k, weight):
+        # Get the subnetwork by sorting the scores and using the top k%
+        lipschitz = 1
+        out = scores.clone()
+        _, idx = scores.flatten(start_dim=1).sort(descending=True)
+        neuron = scores.size()[0]
+        # flat_out and out access the same memory.
+        flat_out = out.flatten(start_dim=1)
+        for i in range(neuron):
+            ordered_weight = torch.abs(weight[i].flatten()[idx[i]])
+            weight_sum = torch.cumsum(ordered_weight, dim=0)
+            j = int((weight_sum <= lipschitz).sum())  # upper_bound
+
+            flat_out[i, idx[i, :j - 1]] = 1
+            if j < flat_out.shape[1]:
+                flat_out[i, idx[j]] = torch.div(torch.add(lipschitz, - weight_sum[j - 1]),
+                                                ordered_weight[j]) if j != 0 else torch.div(lipschitz, ordered_weight[j])
+            flat_out[i, idx[i, j + 1:]] = 0
+
+        return out
+
+
 # Not learning weights, finding subnet
 class FixFanInSubnetConv(SubnetConv):
     def forward(self, x):
-        subnet = GetFixFanInSubnet.apply(self.clamped_scores, self.prune_rate)
+        subnet = GetFixFanInSubnet.apply(self.clamped_scores, self.prune_rate, self.weight)
+        w = self.weight * subnet
+        x = F.conv2d(
+            x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
+        )
+        return x
+
+
+# Not learning weights, finding subnet
+class FixLipschitzSubnetConv(SubnetConv):
+    def forward(self, x):
+        subnet = GetLipschitzSubnet.apply(self.clamped_scores, self.prune_rate, self.weight)
         w = self.weight * subnet
         x = F.conv2d(
             x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
