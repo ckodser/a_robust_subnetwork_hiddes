@@ -155,7 +155,7 @@ class FixedSubnetConv(nn.Conv2d):
         return x
 
 
-class GetLipschitzSubnet(GetSubnet):
+class GetFixFanInSubnet(GetSubnet):
     @staticmethod
     def forward(ctx, scores, k):
         # Get the subnetwork by sorting the scores and using the top k%
@@ -172,11 +172,10 @@ class GetLipschitzSubnet(GetSubnet):
 
         return out
 
-
 # Not learning weights, finding subnet
-class LipschitzSubnetConv(SubnetConv):
+class FixFanInSubnetConv(SubnetConv):
     def forward(self, x):
-        subnet = GetLipschitzSubnet.apply(self.clamped_scores, self.prune_rate)
+        subnet = GetFixFanInSubnet.apply(self.clamped_scores, self.prune_rate)
         w = self.weight * subnet
         x = F.conv2d(
             x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
@@ -184,7 +183,7 @@ class LipschitzSubnetConv(SubnetConv):
         return x
 
 
-class FixedLipschitzSubnetConv(FixedSubnetConv):
+class FixedFixFanInSubnetConv(FixedSubnetConv):
     def set_subnet(self):
         output = self.clamped_scores().clone()
         _, idx = self.clamped_scores().flatten(start_dim=1).abs().sort()

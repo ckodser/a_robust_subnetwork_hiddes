@@ -18,7 +18,7 @@ momentum: 0.9
 batch_size: 128
 
 # ===== Sparsity =========== #
-conv_type: LipschitzSubnetConv
+conv_type: FixFanInSubnetConv
 bn_type: NonAffineBatchNorm
 freeze_weights: True
 prune_rate: -1
