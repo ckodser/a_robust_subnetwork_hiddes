@@ -190,7 +190,7 @@ class GetLipschitzSubnet(GetSubnet):
 
             flat_out[i, idx[i, :j - 1]] = 1
             if j < flat_out.shape[1]:
-                flat_out[i, idx[j]] = torch.div(torch.add(lipschitz, - weight_sum[j - 1]),
+                flat_out[i, idx[i,j]] = torch.div(torch.add(lipschitz, - weight_sum[j - 1]),
                                                 ordered_weight[j]) if j != 0 else torch.div(lipschitz, ordered_weight[j])
             flat_out[i, idx[i, j + 1:]] = 0
 
