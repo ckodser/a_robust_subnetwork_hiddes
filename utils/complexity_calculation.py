@@ -12,7 +12,5 @@ def flop_count(model, train_loader):
 
         flop = FlopCountAnalysis(model, sample_image)
         print(flop_count_table(flop, max_depth=4))
-        print(flop_count_str(flop))
-        print(flop.total())
 
         break
