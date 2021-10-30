@@ -4,6 +4,7 @@ import tqdm
 
 from utils.eval_utils import accuracy, robustness
 from utils.logging import AverageMeter, ProgressMeter
+from utils.conv_type import LipschitzSubnetConv
 
 __all__ = ["train", "validate", "modifier"]
 
@@ -85,9 +86,11 @@ def validate(val_loader, model, criterion, args, writer, epoch):
 
     model_lipschitz = 1
     for layer in model.module.convs:
-        model_lipschitz *= layer.lipschitz
+        if isinstance(layer, LipschitzSubnetConv):
+            model_lipschitz *= layer.lipschitz
     for layer in model.module.linear:
-        model_lipschitz *= layer.lipschitz
+        if isinstance(layer, LipschitzSubnetConv):
+            model_lipschitz *= layer.lipschitz
 
     with torch.no_grad():
         end = time.time()

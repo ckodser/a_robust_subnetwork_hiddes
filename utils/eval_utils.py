@@ -24,8 +24,9 @@ def robustness(output, target, perturbation):
         res = []
         batch_size = target.size(0)
         for eps in perturbation:
+            target = torch.reshape(target, (-1, 1))
             target_class_confidence_after_perturbation = (output.gather(dim=1, index=target) - eps).squeeze()
             second_confidence, _ = output.topk(2, 1, True, True)
             second_confidence = second_confidence[:, 1]
-            res.append(((target_class_confidence_after_perturbation > second_confidence).sum())*100/batch_size)
+            res.append(((target_class_confidence_after_perturbation > second_confidence).sum()) * 100 / batch_size)
         return res
