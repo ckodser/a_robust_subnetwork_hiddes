@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 
+
 def accuracy(output, target, topk=(1,)):
     """Computes the accuracy over the k top predictions for the specified values of k"""
     with torch.no_grad():
@@ -18,14 +19,13 @@ def accuracy(output, target, topk=(1,)):
         return res
 
 
-def robustness(output, target, percentile):
+def robustness(output, target, perturbation):
     with torch.no_grad():
-        percentile = (np.array(percentile) * target.size(0)).astype(np.int)
-        confidence, pred = output.topk(2, 1, True, True)
-        certified_robustness = confidence[:, 0] - confidence[:, 1]
-        certified_robustness, _ = torch.sort(certified_robustness)
-
         res = []
-        for k in percentile:
-            res.append(torch.log(certified_robustness[k]))
+        batch_size = target.size(0)
+        for eps in perturbation:
+            target_class_confidence_after_perturbation = (output.gather(dim=1, index=target) - eps).squeeze()
+            second_confidence, _ = output.topk(2, 1, True, True)
+            second_confidence = second_confidence[:, 1]
+            res.append(((target_class_confidence_after_perturbation > second_confidence).sum())*100/batch_size)
         return res

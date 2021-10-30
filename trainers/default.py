@@ -72,15 +72,22 @@ def validate(val_loader, model, criterion, args, writer, epoch):
     top5 = AverageMeter("Acc@5", ":6.2f", write_val=False)
     # if for each test we calculate max(class)-max2(class) we get a number which we want to increase
     # q1_dist print first quarter value and se on.
-    q1_dist = AverageMeter(" 30% robustness", ":6.2f", write_val=False)
-    q2_dist = AverageMeter(" 20% robustness", ":6.2f", write_val=False)
-    q3_dist = AverageMeter(" 10% robustness", ":6.2f", write_val=False)
+    q1_dist = AverageMeter(" 0.1 perturbation", ":6.2f", write_val=False)
+    q2_dist = AverageMeter(" 0.2 perturbation", ":6.2f", write_val=False)
+    q3_dist = AverageMeter(" 0.3 perturbation", ":6.2f", write_val=False)
+    lipschitz = AverageMeter(" lipschitz", ":6.2f", write_val=False)
     progress = ProgressMeter(
-        len(val_loader), [batch_time, losses, top1, top5, q1_dist, q2_dist, q3_dist], prefix="Test: "
+        len(val_loader), [batch_time, losses, top1, top5, q1_dist, q2_dist, q3_dist, lipschitz], prefix="Test: "
     )
 
     # switch to evaluate mode
     model.eval()
+
+    model_lipschitz = 1
+    for layer in model.module.convs:
+        model_lipschitz *= layer.lipschitz
+    for layer in model.module.linear:
+        model_lipschitz *= layer.lipschitz
 
     with torch.no_grad():
         end = time.time()
@@ -103,11 +110,12 @@ def validate(val_loader, model, criterion, args, writer, epoch):
             top1.update(acc1.item(), images.size(0))
             top5.update(acc5.item(), images.size(0))
 
-            q1, q2, q3 = robustness(output, target, percentile=(0.70, 0.80, 0.90))
+            q1, q2, q3 = robustness(output, target, perturbation=(0.1, 0.2, 0.3))
             q1_dist.update(q1.item(), images.size(0))
             q2_dist.update(q2.item(), images.size(0))
             q3_dist.update(q3.item(), images.size(0))
 
+            lipschitz.update(model_lipschitz, images.size(0))
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
@@ -124,6 +132,14 @@ def validate(val_loader, model, criterion, args, writer, epoch):
 
 
 def modifier(args, epoch, model):
-    for i in range(5):
-        print(model.convs[0].lipschitz)
-    return
+    if args.conv_type == "LipschitzSubnetConv":
+        l = 1
+        lipschitz_rate = [8, 5, 3, 2, 1.5]
+        if epoch < 5:
+            l = lipschitz_rate[epoch]
+
+        for layer in model.module.convs:
+            layer.lipschitz = l
+        for layer in model.module.linear:
+            layer.lipschitz = l
+        print(l)
