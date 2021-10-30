@@ -6,7 +6,6 @@ import random
 from torch.utils.data.sampler import SubsetRandomSampler
 from args import args
 
-
 class CIFAR10:
     def __init__(self, args):
         super(CIFAR10, self).__init__()
@@ -31,7 +30,7 @@ class CIFAR10:
                     transforms.RandomCrop(32, padding=4),
                     transforms.RandomHorizontalFlip(),
                     transforms.ToTensor(),
-                    normalize,
+                    #normalize,
                 ]
             ),
         )
@@ -43,7 +42,10 @@ class CIFAR10:
             root=data_root,
             train=False,
             download=True,
-            transform=transforms.Compose([transforms.ToTensor(), normalize]),
+            transform=transforms.Compose(
+                [transforms.ToTensor(),
+             #    normalize
+                 ]),
         )
         self.val_loader = torch.utils.data.DataLoader(
             test_dataset, batch_size=args.batch_size, shuffle=False, **kwargs
