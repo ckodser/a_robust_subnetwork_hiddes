@@ -54,7 +54,6 @@ class SubnetConv(nn.Conv2d):
         return x
 
 
-
 """
 Sample Based Sparsification
 """
@@ -177,31 +176,32 @@ class GetFixFanInSubnet(GetSubnet):
 class GetLipschitzSubnet(GetSubnet):
     @staticmethod
     def forward(ctx, scores, k, weight, lipschitz):
-        # Get the subnetwork by sorting the scores and using the top k%
+        # Get the subnetwork by sorting the scores for each neuron and using the tops till weights sum reach lipschitz
         out = scores.clone()
         _, idx = scores.flatten(start_dim=1).sort(descending=True)
         neuron = scores.size()[0]
         # flat_out and out access the same memory.
         flat_out = out.flatten(start_dim=1)
-        summ = 0
-        for i in range(neuron):
-            ordered_weight = torch.abs(weight[i].flatten()[idx[i]])
-            weight_sum = torch.cumsum(ordered_weight, dim=0)
-            j = int((weight_sum <= lipschitz).sum())  # upper_bound
-            summ += j
-            flat_out[i, idx[i, :j - 1]] = 1
-            if j < flat_out.shape[1]:
-                flat_out[i, idx[i, j]] = torch.div(torch.add(lipschitz, - weight_sum[j - 1]),
-                                                   ordered_weight[j]) if j != 0 else torch.div(lipschitz,
-                                                                                               ordered_weight[j])
-            flat_out[i, idx[i, j + 1:]] = 0
+        ordered_weight = torch.abs(torch.gather(weight.flatten(start_dim=1), dim=1, index=idx))
+        weight_sum = torch.cumsum(ordered_weight, dim=1)
+        lim = (weight_sum <= lipschitz).sum(dim=1)
 
+        for i in range(neuron):
+            j = lim[i]
+            flat_out[i, idx[i, :j - 1]] = 1
+            flat_out[i, idx[i, j + 1:]] = 0
+            if j < flat_out.shape[1]:
+                flat_out[i, idx[i, j]] = torch.div(torch.add(lipschitz, - weight_sum[i, j - 1]),
+                                                   ordered_weight[i, j]) if j != 0 else torch.div(lipschitz,
+                                                                                                  ordered_weight[i, j])
+        # connection_rate = lim.sum() / scores.numel()
         return out
 
     @staticmethod
     def backward(ctx, g):
         # send the gradient g straight-through on the backward pass.
         return g, None, None, None
+
 
 # Not learning weights, finding subnet
 class FixFanInSubnetConv(SubnetConv):
