@@ -1,0 +1,31 @@
+# Architecture
+arch: Conv4
+
+# ===== Dataset ===== #
+data: /mnt
+set: CIFAR10
+name: conv4_usc_fix_fan_in
+
+# ===== Learning Rate Policy ======== #
+optimizer: sgd
+lr: 0.1
+lr_policy: cosine_lr
+
+# ===== Network training config ===== #
+epochs: 100
+weight_decay: 0.0001
+momentum: 0.9
+batch_size: 128
+
+# ===== Sparsity =========== #
+conv_type: LipschitzSubnetConv
+bn_type: MeanNorm
+freeze_weights: False
+prune_rate: 0.5
+init: kaiming_normal
+# scale_fan: True
+
+nonlinearity: MaxMin
+marginal_learning: 1
+# ===== Hardware setup ===== #
+workers: 2
