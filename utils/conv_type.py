@@ -11,7 +11,7 @@ DenseConv = nn.Conv2d
 
 class GetSubnet(autograd.Function):
     @staticmethod
-    def forward(ctx, scores, k, weight, lipschitz):
+    def forward(ctx, scores, k):
         # Get the subnetwork by sorting the scores and using the top k%
         out = scores.clone()
         _, idx = scores.flatten().sort()
@@ -27,7 +27,7 @@ class GetSubnet(autograd.Function):
     @staticmethod
     def backward(ctx, g):
         # send the gradient g straight-through on the backward pass.
-        return g, None, None, None
+        return g, None
 
 
 # Not learning weights, finding subnet
@@ -37,7 +37,6 @@ class SubnetConv(nn.Conv2d):
 
         self.scores = nn.Parameter(torch.Tensor(self.weight.size()))
         nn.init.kaiming_uniform_(self.scores, a=math.sqrt(5))
-        self.lipschitz = 1
 
     def set_prune_rate(self, prune_rate):
         self.prune_rate = prune_rate
@@ -47,15 +46,13 @@ class SubnetConv(nn.Conv2d):
         return self.scores.abs()
 
     def forward(self, x):
-        subnet = GetSubnet.apply(self.clamped_scores, self.prune_rate, self.weight, self.lipschitz)
+        subnet = GetSubnet.apply(self.clamped_scores, self.prune_rate)
         w = self.weight * subnet
         x = F.conv2d(
             x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
         )
         return x
 
-    def set_lipschitz(self, lipschitz):
-        self.lipschitz = lipschitz
 
 
 """
@@ -161,7 +158,7 @@ class FixedSubnetConv(nn.Conv2d):
 
 class GetFixFanInSubnet(GetSubnet):
     @staticmethod
-    def forward(ctx, scores, k, weight, lipschitz):
+    def forward(ctx, scores, k):
         # Get the subnetwork by sorting the scores and using the top k%
         out = scores.clone()
         _, idx = scores.flatten(start_dim=1).sort()
@@ -186,11 +183,12 @@ class GetLipschitzSubnet(GetSubnet):
         neuron = scores.size()[0]
         # flat_out and out access the same memory.
         flat_out = out.flatten(start_dim=1)
+        summ = 0
         for i in range(neuron):
             ordered_weight = torch.abs(weight[i].flatten()[idx[i]])
             weight_sum = torch.cumsum(ordered_weight, dim=0)
             j = int((weight_sum <= lipschitz).sum())  # upper_bound
-
+            summ += j
             flat_out[i, idx[i, :j - 1]] = 1
             if j < flat_out.shape[1]:
                 flat_out[i, idx[i, j]] = torch.div(torch.add(lipschitz, - weight_sum[j - 1]),
@@ -200,11 +198,15 @@ class GetLipschitzSubnet(GetSubnet):
 
         return out
 
+    @staticmethod
+    def backward(ctx, g):
+        # send the gradient g straight-through on the backward pass.
+        return g, None, None, None
 
 # Not learning weights, finding subnet
 class FixFanInSubnetConv(SubnetConv):
     def forward(self, x):
-        subnet = GetFixFanInSubnet.apply(self.clamped_scores, self.prune_rate, self.weight, self.lipschitz)
+        subnet = GetFixFanInSubnet.apply(self.clamped_scores, self.prune_rate)
         w = self.weight * subnet
         x = F.conv2d(
             x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
@@ -214,6 +216,10 @@ class FixFanInSubnetConv(SubnetConv):
 
 # Not learning weights, finding subnet
 class LipschitzSubnetConv(SubnetConv):
+    def __init__(self, *args, **kwargs):
+        super(LipschitzSubnetConv, self).__init__(*args, **kwargs)
+        self.lipschitz = 1
+
     def forward(self, x):
         subnet = GetLipschitzSubnet.apply(self.clamped_scores, self.prune_rate, self.weight, self.lipschitz)
         w = self.weight * subnet

@@ -124,4 +124,6 @@ def validate(val_loader, model, criterion, args, writer, epoch):
 
 
 def modifier(args, epoch, model):
+    for i in range(5):
+        print(model.convs[0].lipschitz)
     return

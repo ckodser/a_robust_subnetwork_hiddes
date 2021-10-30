@@ -98,6 +98,7 @@ class Builder(object):
             raise ValueError(f"{args.nonlinearity} is not an activation option!")
 
     def _init_conv(self, conv):
+        nonlinearity_name = ("linear" if args.nonlinearity == "MaxMin" else args.nonlinearity)
         if args.init == "one_lipschitz_unsigned_constant":
 
             fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
@@ -117,7 +118,7 @@ class Builder(object):
             fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
             if args.scale_fan:
                 fan = fan * (1 - args.prune_rate)
-            gain = nn.init.calculate_gain("linear" if args.nonlinearity == "MaxMin" else args.nonlinearity)
+            gain = nn.init.calculate_gain(nonlinearity_name)
             std = gain / math.sqrt(fan)
             conv.weight.data = conv.weight.data.sign() * std
 
@@ -127,7 +128,7 @@ class Builder(object):
             if args.scale_fan:
                 fan = fan * (1 - args.prune_rate)
 
-            gain = nn.init.calculate_gain("linear" if args.nonlinearity == "MaxMin" else args.nonlinearity)
+            gain = nn.init.calculate_gain(nonlinearity_name)
             std = gain / math.sqrt(fan)
             conv.weight.data = torch.ones_like(conv.weight.data) * std
 
@@ -136,18 +137,18 @@ class Builder(object):
             if args.scale_fan:
                 fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
                 fan = fan * (1 - args.prune_rate)
-                gain = nn.init.calculate_gain("linear" if args.nonlinearity == "MaxMin" else args.nonlinearity)
+                gain = nn.init.calculate_gain(nonlinearity_name)
                 std = gain / math.sqrt(fan)
                 with torch.no_grad():
                     conv.weight.data.normal_(0, std)
             else:
                 nn.init.kaiming_normal_(
-                    conv.weight, mode=args.mode, nonlinearity=args.nonlinearity
+                    conv.weight, mode=args.mode, nonlinearity=nonlinearity_name
                 )
 
         elif args.init == "kaiming_uniform":
             nn.init.kaiming_uniform_(
-                conv.weight, mode=args.mode, nonlinearity=args.nonlinearity
+                conv.weight, mode=args.mode, nonlinearity=nonlinearity_name
             )
         elif args.init == "xavier_normal":
             nn.init.xavier_normal_(conv.weight)
