@@ -73,12 +73,16 @@ def validate(val_loader, model, criterion, args, writer, epoch):
     top5 = AverageMeter("Acc@5", ":6.2f", write_val=False)
     # if for each test we calculate max(class)-max2(class) we get a number which we want to increase
     # q1_dist print first quarter value and se on.
+    q1_255_dist = AverageMeter(" 1/255 perturbation", ":6.2f", write_val=False)
+    q8_255_dist = AverageMeter(" 8/255 perturbation", ":6.2f", write_val=False)
     q1_dist = AverageMeter(" 0.1 perturbation", ":6.2f", write_val=False)
     q2_dist = AverageMeter(" 0.2 perturbation", ":6.2f", write_val=False)
     q3_dist = AverageMeter(" 0.3 perturbation", ":6.2f", write_val=False)
     lipschitz = AverageMeter(" lipschitz", ":6.2f", write_val=False)
     progress = ProgressMeter(
-        len(val_loader), [batch_time, losses, top1, top5, q1_dist, q2_dist, q3_dist, lipschitz], prefix="Test: "
+        len(val_loader),
+        [batch_time, losses, top1, top5, q1_255_dist, q8_255_dist, q1_dist, q2_dist, q3_dist, lipschitz],
+        prefix="Test: "
     )
 
     # switch to evaluate mode
@@ -113,7 +117,9 @@ def validate(val_loader, model, criterion, args, writer, epoch):
             top1.update(acc1.item(), images.size(0))
             top5.update(acc5.item(), images.size(0))
 
-            q1, q2, q3 = robustness(output, target, perturbation=(0.1, 0.2, 0.3))
+            q1_255, q8_255, q1, q2, q3 = robustness(output, target, perturbation=(1 / 255, 8 / 255, 0.1, 0.2, 0.3))
+            q1_255_dist.update(q1_255, images.size(0))
+            q8_255_dist.update(q8_255, images.size(0))
             q1_dist.update(q1.item(), images.size(0))
             q2_dist.update(q2.item(), images.size(0))
             q3_dist.update(q3.item(), images.size(0))
