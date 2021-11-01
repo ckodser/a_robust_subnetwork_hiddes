@@ -89,12 +89,13 @@ def validate(val_loader, model, criterion, args, writer, epoch):
     model.eval()
 
     model_lipschitz = 1
-    for layer in model.module.convs:
+    for count, layer in enumerate(model.module.convs + model.module.linear):
         if isinstance(layer, LipschitzSubnetConv):
             model_lipschitz *= layer.lipschitz
-    for layer in model.module.linear:
-        if isinstance(layer, LipschitzSubnetConv):
-            model_lipschitz *= layer.lipschitz
+            s = layer.scores.data
+            w = layer.weight.data
+            similarity = torch.dot(s, w) / torch.sqrt(torch.dot(s, s) * torch.dot(w, w))
+            print("score/weight similarity of layer ", count, similarity.cpu().numpy())
 
     with torch.no_grad():
         end = time.time()
@@ -142,13 +143,11 @@ def validate(val_loader, model, criterion, args, writer, epoch):
 
 def modifier(args, epoch, model):
     if args.conv_type == "LipschitzSubnetConv":
-        l = 1
+        lipschitz = 1
         lipschitz_rate = [8, 5, 3, 2, 1.5]
         if epoch < 5:
-            l = lipschitz_rate[epoch]
+            lipschitz = lipschitz_rate[epoch]
 
-        for layer in model.module.convs:
-            layer.lipschitz = l
-        for layer in model.module.linear:
-            layer.lipschitz = l
-        print(l)
+        for layer in model.module.convs + model.module.linear:
+            layer.lipschitz = lipschitz
+        print(lipschitz)
