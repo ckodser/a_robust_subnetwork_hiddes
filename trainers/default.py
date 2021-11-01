@@ -6,6 +6,8 @@ from utils.eval_utils import accuracy, robustness
 from utils.logging import AverageMeter, ProgressMeter
 from utils.conv_type import LipschitzSubnetConv
 
+import itertools
+
 __all__ = ["train", "validate", "modifier"]
 
 
@@ -78,24 +80,14 @@ def validate(val_loader, model, criterion, args, writer, epoch):
     q1_dist = AverageMeter(" 0.1 perturbation", ":6.2f", write_val=False)
     q2_dist = AverageMeter(" 0.2 perturbation", ":6.2f", write_val=False)
     q3_dist = AverageMeter(" 0.3 perturbation", ":6.2f", write_val=False)
-    lipschitz = AverageMeter(" lipschitz", ":6.2f", write_val=False)
     progress = ProgressMeter(
         len(val_loader),
-        [batch_time, losses, top1, top5, q1_255_dist, q8_255_dist, q1_dist, q2_dist, q3_dist, lipschitz],
+        [batch_time, losses, top1, top5, q1_255_dist, q8_255_dist, q1_dist, q2_dist, q3_dist],
         prefix="Test: "
     )
 
     # switch to evaluate mode
     model.eval()
-
-    model_lipschitz = 1
-    for count, layer in enumerate(model.module.convs + model.module.linear):
-        if isinstance(layer, LipschitzSubnetConv):
-            model_lipschitz *= layer.lipschitz
-            s = layer.scores.data
-            w = layer.weight.data
-            similarity = torch.dot(s, w) / torch.sqrt(torch.dot(s, s) * torch.dot(w, w))
-            print("score/weight similarity of layer ", count, similarity.cpu().numpy())
 
     with torch.no_grad():
         end = time.time()
@@ -125,7 +117,6 @@ def validate(val_loader, model, criterion, args, writer, epoch):
             q2_dist.update(q2.item(), images.size(0))
             q3_dist.update(q3.item(), images.size(0))
 
-            lipschitz.update(model_lipschitz, images.size(0))
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
@@ -144,10 +135,19 @@ def validate(val_loader, model, criterion, args, writer, epoch):
 def modifier(args, epoch, model):
     if args.conv_type == "LipschitzSubnetConv":
         lipschitz = 1
+        model_lipschitz = 1
         lipschitz_rate = [8, 5, 3, 2, 1.5]
         if epoch < 5:
             lipschitz = lipschitz_rate[epoch]
 
-        for layer in model.module.convs + model.module.linear:
-            layer.lipschitz = lipschitz
-        print(lipschitz)
+        count = 0
+        for layer in itertools.chain(model.module.convs, model.module.linear):
+            if isinstance(layer, LipschitzSubnetConv):
+                count += 1
+                layer.lipschitz = lipschitz
+                model_lipschitz *= layer.lipschitz
+                s = layer.scores.data
+                w = layer.weight.data
+                similarity = torch.dot(s, w) / torch.sqrt(torch.dot(s, s) * torch.dot(w, w))
+                print("score/weight similarity of layer ", count, similarity.cpu().numpy())
+        print("lipschitz of whole model:", lipschitz ** count)
