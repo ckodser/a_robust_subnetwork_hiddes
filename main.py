@@ -22,7 +22,6 @@ from utils.net_utils import (
     LabelSmoothing,
 )
 from utils.schedulers import get_policy
-from utils.complexity_calculation import flop_count
 
 from args import args
 import importlib
@@ -120,7 +119,10 @@ def main_worker(args):
         filename=ckpt_base_dir / f"initial.state",
         save=False,
     )
-    flop_count(model, data.train_loader)
+    if args.flop_count is True:
+        from utils.complexity_calculation import flop_count
+        flop_count(model, data.train_loader)
+        return
 
     # Start training
     for epoch in range(args.start_epoch, args.epochs):

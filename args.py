@@ -167,6 +167,12 @@ def parse_arguments():
         help="Whether or not to use a random subnet when fine tuning for lottery experiments",
     )
     parser.add_argument(
+        "--flop-count",
+        type=bool,
+        default=False,
+        help="if this argument is true we only calculate model FLOP",
+    )
+    parser.add_argument(
         "--one-batch",
         action="store_true",
         help="One batch train set for debugging purposes (test overfitting)",

@@ -1,7 +1,7 @@
 # code from https://github.com/facebookresearch/fvcore/blob/main/docs/flop_count.md
 
 import torch
-from fvcore.nn import FlopCountAnalysis, flop_count_table, flop_count_str
+from fvcore.nn import FlopCountAnalysis, flop_count_table
 
 
 def flop_count(model, train_loader):
