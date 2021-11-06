@@ -44,6 +44,13 @@ def parse_arguments():
         help="number of total epochs to run",
     )
     parser.add_argument(
+        "--score_initialization_rounds",
+        default=0,
+        type=int,
+        metavar="N",
+        help=" number of epochs which lipschitz is fix and equal to 9 for each layer"
+    )
+    parser.add_argument(
         "--start-epoch",
         default=None,
         type=int,

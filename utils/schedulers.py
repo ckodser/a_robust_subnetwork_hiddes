@@ -80,7 +80,8 @@ def lipschitzSubnetConv_count(model):
 
 
 def lipschitz_schedulers_linear(args, layers, epoch):
-    warm_up = args.epochs / 2
+    warm_up = (args.epochs - args.score_initialization_rounds) / 2
+    epoch -= args.score_initialization_rounds
     if epoch >= warm_up:
         return 1
     else:
@@ -88,7 +89,8 @@ def lipschitz_schedulers_linear(args, layers, epoch):
 
 
 def lipschitz_schedulers_inverse(args, layers, epoch):
-    warm_up = args.epochs / 2
+    warm_up = (args.epochs - args.score_initialization_rounds) / 2
+    epoch -= args.score_initialization_rounds
     if epoch >= warm_up:
         return 1
     else:
@@ -96,7 +98,8 @@ def lipschitz_schedulers_inverse(args, layers, epoch):
 
 
 def lipschitz_schedulers_x_to_layers_num(args, epoch):
-    warm_up = args.epochs / 2
+    warm_up = (args.epochs - args.score_initialization_rounds) / 2
+    epoch -= args.score_initialization_rounds
     if epoch >= warm_up:
         return 1
     else:
@@ -104,6 +107,8 @@ def lipschitz_schedulers_x_to_layers_num(args, epoch):
 
 
 def get_lipschitz(args, model, epoch):
+    if args.score_initialization_rounds > epoch:
+        return 9
     if args.lipschitz_schedulers == "linear":
         return lipschitz_schedulers_linear(args, lipschitzSubnetConv_count(model), epoch)
     elif args.lipschitz_schedulers == "1onx":
