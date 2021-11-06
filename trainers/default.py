@@ -5,7 +5,7 @@ import tqdm
 from utils.eval_utils import accuracy, robustness
 from utils.logging import AverageMeter, ProgressMeter
 from utils.conv_type import LipschitzSubnetConv
-from utils.schedulers import lipschitz_schedulers_linear
+from utils.schedulers import get_lipschitz
 
 import itertools
 
@@ -143,7 +143,7 @@ def modifier(args, epoch, model):
     if args.conv_type == "LipschitzSubnetConv":
         model_lipschitz = 1
 
-        lipschitz = lipschitz_schedulers_linear(args, model, epoch)
+        lipschitz = get_lipschitz(args,model,epoch)
 
         count = 0
         for layer in itertools.chain(model.module.convs, model.module.linear):

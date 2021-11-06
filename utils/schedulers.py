@@ -95,7 +95,7 @@ def lipschitz_schedulers_inverse(args, layers, epoch):
         return (5000 * ((1 / (epoch + 1)) - (1 / warm_up) + (1 / 5000))) ** (1 / layers)
 
 
-def lipschitz_schedulers_exponential(args, layers, epoch):
+def lipschitz_schedulers_x_to_layers_num(args, epoch):
     warm_up = args.epochs / 2
     if epoch >= warm_up:
         return 1
@@ -107,8 +107,8 @@ def get_lipschitz(args, model, epoch):
     if args.lipschitz_schedulers == "linear":
         return lipschitz_schedulers_linear(args, lipschitzSubnetConv_count(model), epoch)
     elif args.lipschitz_schedulers == "1onx":
-        return lipschitz_schedulers_linear(args, lipschitzSubnetConv_count(model), epoch)
+        return lipschitz_schedulers_inverse(args, lipschitzSubnetConv_count(model), epoch)
     elif args.lipschitz_schedulers == "xtolayersnum":
-        return lipschitz_schedulers_linear(args, lipschitzSubnetConv_count(model), epoch)
+        return lipschitz_schedulers_x_to_layers_num(args, epoch)
     else:
         print(" lipschitz schedulers option isn't in the list!")
