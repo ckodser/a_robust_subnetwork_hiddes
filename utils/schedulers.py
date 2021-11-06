@@ -1,6 +1,9 @@
 import numpy as np
+import itertools
 
 __all__ = ["multistep_lr", "cosine_lr", "constant_lr", "get_policy"]
+
+from utils.conv_type import LipschitzSubnetConv
 
 
 def get_policy(name):
@@ -66,3 +69,46 @@ def multistep_lr(optimizer, args, **kwargs):
 
 def _warmup_lr(base_lr, warmup_length, epoch):
     return base_lr * (epoch + 1) / warmup_length
+
+
+def lipschitzSubnetConv_count(model):
+    lipschitz_subnet_conv_count = 0
+    for layer in itertools.chain(model.module.convs, model.module.linear):
+        if isinstance(layer, LipschitzSubnetConv):
+            lipschitz_subnet_conv_count += 1
+    return lipschitz_subnet_conv_count
+
+
+def lipschitz_schedulers_linear(args, layers, epoch):
+    warm_up = args.epochs / 2
+    if epoch >= warm_up:
+        return 1
+    else:
+        return ((warm_up - epoch) / warm_up * 5000 + 1) ** (1 / layers)
+
+
+def lipschitz_schedulers_inverse(args, layers, epoch):
+    warm_up = args.epochs / 2
+    if epoch >= warm_up:
+        return 1
+    else:
+        return (5000 * ((1 / (epoch + 1)) - (1 / warm_up) + (1 / 5000))) ** (1 / layers)
+
+
+def lipschitz_schedulers_exponential(args, layers, epoch):
+    warm_up = args.epochs / 2
+    if epoch >= warm_up:
+        return 1
+    else:
+        return 1 + (warm_up - epoch) / warm_up * 7
+
+
+def get_lipschitz(args, model, epoch):
+    if args.lipschitz_schedulers == "linear":
+        return lipschitz_schedulers_linear(args, lipschitzSubnetConv_count(model), epoch)
+    elif args.lipschitz_schedulers == "1onx":
+        return lipschitz_schedulers_linear(args, lipschitzSubnetConv_count(model), epoch)
+    elif args.lipschitz_schedulers == "xtolayersnum":
+        return lipschitz_schedulers_linear(args, lipschitzSubnetConv_count(model), epoch)
+    else:
+        print(" lipschitz schedulers option isn't in the list!")

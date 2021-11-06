@@ -5,6 +5,7 @@ import tqdm
 from utils.eval_utils import accuracy, robustness
 from utils.logging import AverageMeter, ProgressMeter
 from utils.conv_type import LipschitzSubnetConv
+from utils.schedulers import lipschitz_schedulers_linear
 
 import itertools
 
@@ -141,11 +142,8 @@ def validate(val_loader, model, criterion, args, writer, epoch):
 def modifier(args, epoch, model):
     if args.conv_type == "LipschitzSubnetConv":
         model_lipschitz = 1
-        warm_up = args.epochs/2
-        if epoch >= warm_up:
-            lipschitz = 1
-        else:
-            lipschitz = 1 + (warm_up - epoch) / warm_up * 7
+
+        lipschitz = lipschitz_schedulers_linear(args, model, epoch)
 
         count = 0
         for layer in itertools.chain(model.module.convs, model.module.linear):
@@ -158,5 +156,6 @@ def modifier(args, epoch, model):
                 s = torch.abs(torch.flatten(s))
                 w = torch.abs(torch.flatten(w))
                 similarity = torch.dot(s, w) / torch.sqrt(torch.dot(s, s) * torch.dot(w, w))
-                print("score/weight similarity of layer ", count, similarity.cpu().numpy())
+                print("score/weight similarity of layer ", count, similarity.cpu().numpy(), " weight sum:",
+                      torch.sum(w))
         print("lipschitz of whole model:", lipschitz ** count, " = ", lipschitz, "^", count)

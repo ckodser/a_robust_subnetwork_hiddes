@@ -190,6 +190,9 @@ def parse_arguments():
         "--nonlinearity", default="relu", help="Nonlinearity used by initialization"
     )
     parser.add_argument(
+        "--lipschitz_schedulers", default="linear", help=" lipschitz decay follow this function"
+    )
+    parser.add_argument(
         "--pooling", default="max_pooling", help=" pooling used to reduce size of output of CNN"
     )
     parser.add_argument("--bn-type", default=None, help="BatchNorm type")
