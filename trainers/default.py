@@ -140,11 +140,12 @@ def validate(val_loader, model, criterion, args, writer, epoch):
 
 def modifier(args, epoch, model):
     if args.conv_type == "LipschitzSubnetConv":
-        lipschitz = 1
         model_lipschitz = 1
-        lipschitz_rate = [8, 5, 3, 2, 1.5]
-        if epoch < 5:
-            lipschitz = lipschitz_rate[epoch]
+        warm_up = args.epochs/2
+        if epoch >= warm_up:
+            lipschitz = 1
+        else:
+            lipschitz = 1 + (warm_up - epoch) / warm_up * 7
 
         count = 0
         for layer in itertools.chain(model.module.convs, model.module.linear):
