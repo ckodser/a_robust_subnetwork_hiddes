@@ -157,5 +157,5 @@ def modifier(args, epoch, model):
                 w = torch.abs(torch.flatten(w))
                 similarity = torch.dot(s, w) / torch.sqrt(torch.dot(s, s) * torch.dot(w, w))
                 print("score/weight similarity of layer ", count, similarity.cpu().numpy(), " weight sum:",
-                      torch.sum(w))
+                      torch.sum(w).cpu().numpy())
         print("lipschitz of whole model:", lipschitz ** count, " = ", lipschitz, "^", count)
