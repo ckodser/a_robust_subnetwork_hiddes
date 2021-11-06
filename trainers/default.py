@@ -89,6 +89,11 @@ def validate(val_loader, model, criterion, args, writer, epoch):
     # switch to evaluate mode
     model.eval()
 
+    model_lipschitz = 1
+    for layer in itertools.chain(model.module.convs, model.module.linear):
+        if isinstance(layer, LipschitzSubnetConv):
+            model_lipschitz *= layer.lipschitz
+
     with torch.no_grad():
         end = time.time()
         for i, (images, target) in tqdm.tqdm(
@@ -110,7 +115,8 @@ def validate(val_loader, model, criterion, args, writer, epoch):
             top1.update(acc1.item(), images.size(0))
             top5.update(acc5.item(), images.size(0))
 
-            q1_255, q8_255, q1, q2, q3 = robustness(output, target, perturbation=(1 / 255, 8 / 255, 0.1, 0.2, 0.3))
+            q1_255, q8_255, q1, q2, q3 = robustness(output, target, perturbation=(1 / 255, 8 / 255, 0.1, 0.2, 0.3),
+                                                    lipschitz=model_lipschitz)
             q1_255_dist.update(q1_255, images.size(0))
             q8_255_dist.update(q8_255, images.size(0))
             q1_dist.update(q1.item(), images.size(0))

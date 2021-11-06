@@ -19,11 +19,12 @@ def accuracy(output, target, topk=(1,)):
         return res
 
 
-def robustness(output, target, perturbation):
+def robustness(output, target, perturbation, lipschitz):
     with torch.no_grad():
         res = []
         batch_size = target.size(0)
         for eps in perturbation:
+            eps *= lipschitz
             target = torch.reshape(target, (-1, 1))
             target_class_confidence_after_perturbation = (output.gather(dim=1, index=target) - eps).squeeze()
             second_confidence, _ = output.topk(2, 1, True, True)
