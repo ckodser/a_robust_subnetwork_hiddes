@@ -142,8 +142,7 @@ def validate(val_loader, model, criterion, args, writer, epoch):
 def modifier(args, epoch, model):
     if args.conv_type == "LipschitzSubnetConv":
         model_lipschitz = 1
-
-        lipschitz = get_lipschitz(args,model,epoch)
+        lipschitz = get_lipschitz(args, model, epoch)
 
         count = 0
         for layer in itertools.chain(model.module.convs, model.module.linear):

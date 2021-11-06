@@ -133,7 +133,6 @@ class Builder(object):
             conv.weight.data = torch.ones_like(conv.weight.data) * std
 
         elif args.init == "kaiming_normal":
-
             if args.scale_fan:
                 fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
                 fan = fan * (1 - args.prune_rate)
@@ -145,6 +144,11 @@ class Builder(object):
                 nn.init.kaiming_normal_(
                     conv.weight, mode=args.mode, nonlinearity=nonlinearity_name
                 )
+
+            if args.scale_fan and args.conv_type == "LipschitzSubnetConv":
+                s = torch.sum(conv.weight.data).detach()
+                if s > 700:
+                    conv.weight.data = conv.weight.data / s * 700
 
         elif args.init == "kaiming_uniform":
             nn.init.kaiming_uniform_(
