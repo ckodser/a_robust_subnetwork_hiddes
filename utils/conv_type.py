@@ -177,9 +177,10 @@ class GetLipschitzSubnet(GetSubnet):
     @staticmethod
     def forward(ctx, scores, k, weight, lipschitz):
         # Get the subnetwork by sorting the scores for each neuron and using the tops till weights sum reach lipschitz
-        out = scores.clone()
-        _, idx = scores.flatten(start_dim=1).sort(descending=True)
-        neuron = scores.size()[0]
+        goodness = torch.div(scores, torch.abs(weight))
+        out = goodness.clone()
+        _, idx = goodness.flatten(start_dim=1).sort(descending=True)
+        neuron = goodness.size()[0]
         # flat_out and out access the same memory.
         flat_out = out.flatten(start_dim=1)
         ordered_weight = torch.abs(torch.gather(weight.flatten(start_dim=1), dim=1, index=idx))
