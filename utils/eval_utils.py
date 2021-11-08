@@ -23,11 +23,12 @@ def robustness(output, target, perturbation, lipschitz):
     with torch.no_grad():
         res = []
         batch_size = target.size(0)
+        second_confidence, _ = output.topk(2, 1, True, True)
+        second_confidence = second_confidence[:, 1]
+        target_class_confidence = (output.gather(dim=1, index=target)).squeeze()
+        bound = target_class_confidence - second_confidence
         for eps in perturbation:
             eps *= lipschitz
             target = torch.reshape(target, (-1, 1))
-            target_class_confidence_after_perturbation = (output.gather(dim=1, index=target) - 2*eps).squeeze()
-            second_confidence, _ = output.topk(2, 1, True, True)
-            second_confidence = second_confidence[:, 1]
-            res.append(((target_class_confidence_after_perturbation > second_confidence).sum()) * 100 / batch_size)
+            res.append(((bound > 2 * eps).sum()) * 100 / batch_size)
         return res
