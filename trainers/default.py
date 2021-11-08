@@ -120,9 +120,9 @@ def validate(val_loader, model, criterion, args, writer, epoch):
                                                     lipschitz=model_lipschitz)
             q1_255_dist.update(q1_255, images.size(0))
             q8_255_dist.update(q8_255, images.size(0))
-            q1_dist.update(q1.item(), images.size(0))
-            q2_dist.update(q2.item(), images.size(0))
-            q3_dist.update(q3.item(), images.size(0))
+            q1_dist.update(q1, images.size(0))
+            q2_dist.update(q2, images.size(0))
+            q3_dist.update(q3, images.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
