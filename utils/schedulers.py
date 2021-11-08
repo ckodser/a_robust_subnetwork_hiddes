@@ -108,8 +108,8 @@ def lipschitz_schedulers_x_to_layers_num(args, epoch, initial_lipschitz):
 
 
 def get_lipschitz(args, layer, epoch):
-    connection_num = layer.weight.data.numel() / layer.weight.data.shape[0]
-    avg_weight = torch.sum(layer.weight.data) / layer.weight.data.numel()
+    connection_num = int((layer.weight.data.numel() / layer.weight.data.shape[0]).cpu().numpy())
+    avg_weight = int((torch.sum(layer.weight.data) / layer.weight.data.numel()).cpu().numpy())
     if epoch <= args.score_initialization_rounds:
         return connection_num*avg_weight/2
     elif args.lipschitz_schedulers == "xtolayersnum":
