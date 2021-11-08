@@ -1,5 +1,6 @@
 import numpy as np
 import itertools
+import torch
 
 __all__ = ["multistep_lr", "cosine_lr", "constant_lr", "get_policy"]
 
@@ -79,41 +80,39 @@ def lipschitzSubnetConv_count(model):
     return lipschitz_subnet_conv_count
 
 
-def lipschitz_schedulers_linear(args, layers, epoch):
+# def lipschitz_schedulers_linear(args, layers, epoch):
+#     warm_up = (args.epochs - args.score_initialization_rounds) / 2
+#     epoch -= args.score_initialization_rounds
+#     if epoch >= warm_up:
+#         return 1
+#     else:
+#         return ((warm_up - epoch) / warm_up * 5000 + 1) ** (1 / layers)
+#
+#
+# def lipschitz_schedulers_inverse(args, layers, epoch):
+#     warm_up = (args.epochs - args.score_initialization_rounds) / 2
+#     epoch -= args.score_initialization_rounds
+#     if epoch >= warm_up:
+#         return 1
+#     else:
+#         return (5000 * ((1 / (epoch + 1)) - (1 / warm_up) + (1 / 5000))) ** (1 / layers)
+
+
+def lipschitz_schedulers_x_to_layers_num(args, epoch, initial_lipschitz):
     warm_up = (args.epochs - args.score_initialization_rounds) / 2
     epoch -= args.score_initialization_rounds
     if epoch >= warm_up:
         return 1
     else:
-        return ((warm_up - epoch) / warm_up * 5000 + 1) ** (1 / layers)
+        return 1 + (warm_up - epoch) / warm_up * (initial_lipschitz-1)
 
 
-def lipschitz_schedulers_inverse(args, layers, epoch):
-    warm_up = (args.epochs - args.score_initialization_rounds) / 2
-    epoch -= args.score_initialization_rounds
-    if epoch >= warm_up:
-        return 1
-    else:
-        return (5000 * ((1 / (epoch + 1)) - (1 / warm_up) + (1 / 5000))) ** (1 / layers)
-
-
-def lipschitz_schedulers_x_to_layers_num(args, epoch):
-    warm_up = (args.epochs - args.score_initialization_rounds) / 2
-    epoch -= args.score_initialization_rounds
-    if epoch >= warm_up:
-        return 1
-    else:
-        return 1 + (warm_up - epoch) / warm_up * 7
-
-
-def get_lipschitz(args, model, epoch):
-    if args.score_initialization_rounds > epoch:
-        return 9
-    if args.lipschitz_schedulers == "linear":
-        return lipschitz_schedulers_linear(args, lipschitzSubnetConv_count(model), epoch)
-    elif args.lipschitz_schedulers == "1onx":
-        return lipschitz_schedulers_inverse(args, lipschitzSubnetConv_count(model), epoch)
+def get_lipschitz(args, layer, epoch):
+    connection_num = layer.weight.data.numel() / layer.weight.data.shape[0]
+    avg_weight = torch.sum(layer.weight.data) / layer.weight.data.numel()
+    if epoch <= args.score_initialization_rounds:
+        return connection_num*avg_weight/2
     elif args.lipschitz_schedulers == "xtolayersnum":
-        return lipschitz_schedulers_x_to_layers_num(args, epoch)
+        return lipschitz_schedulers_x_to_layers_num(args, epoch, connection_num*avg_weight/2)
     else:
         print(" lipschitz schedulers option isn't in the list!")

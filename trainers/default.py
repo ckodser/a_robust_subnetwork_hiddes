@@ -143,12 +143,11 @@ def modifier(args, epoch, model):
     if args.conv_type == "LipschitzSubnetConv":
         model_lipschitz = 1
 
-        lipschitz = get_lipschitz(args,model,epoch)
-
         count = 0
         for layer in itertools.chain(model.module.convs, model.module.linear):
             if isinstance(layer, LipschitzSubnetConv):
                 count += 1
+                lipschitz = get_lipschitz(args, layer, epoch)
                 layer.lipschitz = lipschitz
                 model_lipschitz *= layer.lipschitz
                 s = layer.scores.data
@@ -156,6 +155,6 @@ def modifier(args, epoch, model):
                 s = torch.abs(torch.flatten(s))
                 w = torch.abs(torch.flatten(w))
                 similarity = torch.dot(s, w) / torch.sqrt(torch.dot(s, s) * torch.dot(w, w))
-                print("score/weight similarity of layer ", count, similarity.cpu().numpy(), " weight sum:",
-                      torch.sum(w).cpu().numpy())
-        print("lipschitz of whole model:", lipschitz ** count, " = ", lipschitz, "^", count)
+                print("score/weight similarity of layer ", count, similarity.cpu().numpy(), " sum weight:",
+                      torch.sum(layer.weight.data[0]).cpu().numpy(), " lipschitz= ", lipschitz)
+        print("lipschitz of whole model:", model_lipschitz)
