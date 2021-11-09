@@ -87,15 +87,15 @@ def lipschitzSubnetConv_count(model):
 #         return 1
 #     else:
 #         return ((warm_up - epoch) / warm_up * 5000 + 1) ** (1 / layers)
-#
-#
-# def lipschitz_schedulers_inverse(args, layers, epoch):
-#     warm_up = (args.epochs - args.score_initialization_rounds) / 2
-#     epoch -= args.score_initialization_rounds
-#     if epoch >= warm_up:
-#         return 1
-#     else:
-#         return (5000 * ((1 / (epoch + 1)) - (1 / warm_up) + (1 / 5000))) ** (1 / layers)
+
+
+def lipschitz_schedulers_inverse(args, epoch, initial_lipschitz):
+    warm_up = (args.epochs - args.score_initialization_rounds) / 2
+    epoch -= args.score_initialization_rounds
+    if epoch >= warm_up:
+        return 1
+    else:
+        return initial_lipschitz * ((1 / (epoch + 1)) - (1 / warm_up) + (1 / initial_lipschitz))
 
 
 def lipschitz_schedulers_x_to_layers_num(args, epoch, initial_lipschitz):
@@ -108,11 +108,13 @@ def lipschitz_schedulers_x_to_layers_num(args, epoch, initial_lipschitz):
 
 
 def get_lipschitz(args, layer, epoch):
-    connection_num = int((layer.weight.data.numel() / layer.weight.data.shape[0]).cpu().numpy())
-    avg_weight = int((torch.sum(layer.weight.data) / layer.weight.data.numel()).cpu().numpy())
+    connection_num = layer.weight.data.numel() / layer.weight.data.shape[0]
+    avg_weight = torch.sum(torch.abs(layer.weight.data)) / layer.weight.data.numel()
     if epoch <= args.score_initialization_rounds:
-        return connection_num*avg_weight/2
+        return float((connection_num * avg_weight / 2).cpu().numpy())
     elif args.lipschitz_schedulers == "xtolayersnum":
-        return lipschitz_schedulers_x_to_layers_num(args, epoch, connection_num*avg_weight/2)
+        return lipschitz_schedulers_x_to_layers_num(args, epoch, 4)
+    elif args.lipschitz_schedulers == "inverse":
+        return lipschitz_schedulers_inverse(args, epoch, 4)
     else:
         print(" lipschitz schedulers option isn't in the list!")
