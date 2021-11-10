@@ -4,7 +4,7 @@ import tqdm
 
 from utils.eval_utils import accuracy, robustness
 from utils.logging import AverageMeter, ProgressMeter
-from utils.conv_type import LipschitzSubnetConv
+from utils.conv_type import LipschitzSubnetConv, GetLipschitzSubnet
 from utils.schedulers import get_lipschitz
 
 import itertools
@@ -155,6 +155,11 @@ def modifier(args, epoch, model):
                 s = torch.abs(torch.flatten(s))
                 w = torch.abs(torch.flatten(w))
                 similarity = torch.dot(s, w) / torch.sqrt(torch.dot(s, s) * torch.dot(w, w))
+
+                subnet = GetLipschitzSubnet.apply(layer.clamped_scores, layer.prune_rate, layer.weight, lipschitz)
+                w = layer.weight * subnet
+
                 print("score/weight similarity of layer ", count, similarity.cpu().numpy(), " sum weight:",
-                      torch.sum(torch.abs(layer.weight.data[0])).cpu().numpy(), " lipschitz= ", lipschitz)
+                      torch.sum(torch.abs(layer.weight.data[0])).cpu().numpy(), " lipschitz= ", lipschitz,
+                      "lipschitz check= ", torch.sum(torch.abs(w[0])).cpu().numpy())
         print("lipschitz of whole model:", model_lipschitz)
