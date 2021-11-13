@@ -186,16 +186,17 @@ class GetLipschitzSubnet(GetSubnet):
         ordered_weight = torch.abs(torch.gather(weight.flatten(start_dim=1), dim=1, index=idx))
         weight_sum = torch.cumsum(ordered_weight, dim=1)
         lim = (weight_sum <= lipschitz).sum(dim=1)
+        # flat_out = (weight_sum <= lipschitz)
 
         for i in range(neuron):
             j = lim[i]
-            flat_out[i, idx[i, :j - 1]] = 1
+            flat_out[i, idx[i, :j]] = 1
             flat_out[i, idx[i, j + 1:]] = 0
             if j < flat_out.shape[1]:
                 flat_out[i, idx[i, j]] = torch.div(torch.add(lipschitz, - weight_sum[i, j - 1]),
                                                    ordered_weight[i, j]) if j != 0 else torch.div(lipschitz,
                                                                                                   ordered_weight[i, j])
-        # connection_rate = lim.sum() / scores.numel()
+        # # connection_rate = lim.sum() / scores.numel()
         return out
 
     @staticmethod
