@@ -253,3 +253,8 @@ class Projection(GetSubnet):
         out = torch.zeros_like(sorted_goodness)
         out.scatter_(dim=1, index=idx, src=(weight_sum <= lipschitz).float())
         return out.reshape(scores.shape)*weight
+
+    @staticmethod
+    def backward(ctx, g):
+        # send the gradient g straight-through on the backward pass.
+        return g, None, None, None
