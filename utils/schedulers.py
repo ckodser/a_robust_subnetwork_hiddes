@@ -104,17 +104,18 @@ def lipschitz_schedulers_x_to_layers_num(args, epoch, initial_lipschitz):
     if epoch >= warm_up:
         return 1
     else:
-        return 1 + (warm_up - epoch) / warm_up * (initial_lipschitz-1)
+        return 1 + (warm_up - epoch) / warm_up * (initial_lipschitz - 1)
 
 
 def get_lipschitz(args, layer, epoch):
     connection_num = layer.weight.data.numel() / layer.weight.data.shape[0]
     avg_weight = torch.sum(torch.abs(layer.weight.data)) / layer.weight.data.numel()
-    if epoch <= args.score_initialization_rounds:
-        return float((connection_num * avg_weight / 2).cpu().numpy())
+    initial_lipschitz = float((connection_num * avg_weight / 2).cpu().numpy())
+    if epoch < args.score_initialization_rounds:
+        return initial_lipschitz
     elif args.lipschitz_schedulers == "xtolayersnum":
-        return lipschitz_schedulers_x_to_layers_num(args, epoch, 4)
+        return lipschitz_schedulers_x_to_layers_num(args, epoch, min(5, initial_lipschitz))
     elif args.lipschitz_schedulers == "inverse":
-        return lipschitz_schedulers_inverse(args, epoch, 4)
+        return lipschitz_schedulers_inverse(args, epoch, min(5, initial_lipschitz))
     else:
         print(" lipschitz schedulers option isn't in the list!")
