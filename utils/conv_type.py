@@ -178,7 +178,7 @@ class GetLipschitzSubnet(GetSubnet):
     def forward(ctx, scores, k, weight, lipschitz):
         # Get the subnetwork by sorting the scores for each neuron and using the tops till weights sum reach lipschitz
         goodness = scores  # torch.div(scores, torch.abs(weight))
-        out = goodness.clone()
+        out = torch.zeros_like(goodness.shape)
         _, idx = goodness.flatten(start_dim=1).sort(descending=True)
         neuron = goodness.size()[0]
         # flat_out and out access the same memory.
@@ -186,8 +186,6 @@ class GetLipschitzSubnet(GetSubnet):
         ordered_weight = torch.abs(torch.gather(weight.flatten(start_dim=1), dim=1, index=idx))
         weight_sum = torch.cumsum(ordered_weight, dim=1)
         lim = (weight_sum <= lipschitz).sum(dim=1)
-        # flat_out = (weight_sum <= lipschitz)
-
         for i in range(neuron):
             j = lim[i]
             flat_out[i, idx[i, :j]] = 1
@@ -223,8 +221,7 @@ class LipschitzSubnetConv(SubnetConv):
         self.lipschitz = 1
 
     def forward(self, x):
-        subnet = GetLipschitzSubnet.apply(self.clamped_scores, self.prune_rate, self.weight, self.lipschitz)
-        w = self.weight * subnet
+        w = Projection.apply(self.clamped_scores, self.prune_rate, self.weight, self.lipschitz)
         x = F.conv2d(
             x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
         )
@@ -243,3 +240,16 @@ class FixedFixFanInSubnetConv(FixedSubnetConv):
             flat_oup[i, idx[i, p:]] = 1
         self.scores = torch.nn.Parameter(output)
         self.scores.requires_grad = False
+
+
+class Projection(GetSubnet):
+    @staticmethod
+    def forward(ctx, scores, k, weight, lipschitz):
+        # Get the subnetwork by sorting the scores for each neuron and using the tops till weights sum reach lipschitz
+        goodness = scores#torch.div(scores, torch.abs(weight)) #-torch.abs(weight)#scores
+        sorted_goodness, idx = goodness.flatten(start_dim=1).sort(descending=True)
+        ordered_weight = torch.abs(torch.gather(weight.flatten(start_dim=1), dim=1, index=idx))
+        weight_sum = torch.cumsum(ordered_weight, dim=1)
+        out = torch.zeros_like(sorted_goodness)
+        out.scatter_(dim=1, index=idx, src=(weight_sum <= lipschitz).float())
+        return out.reshape(scores.shape)*weight
