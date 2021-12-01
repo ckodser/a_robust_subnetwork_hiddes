@@ -183,7 +183,7 @@ class GetLipschitzSubnet(GetSubnet):
             weight_sum = torch.cumsum(ordered_weight, dim=1)
             out = torch.zeros_like(sorted_goodness)
             out.scatter_(dim=1, index=idx, src=(weight_sum <= lipschitz).float())
-            return out.reshape(scores.shape) * weight
+            return out.reshape(scores.shape)
 
         else:
             # Get the subnetwork by sorting the scores for each neuron and using the tops till weights sum reach lipschitz
