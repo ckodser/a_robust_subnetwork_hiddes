@@ -99,6 +99,29 @@ class Builder(object):
 
     def _init_conv(self, conv):
         nonlinearity_name = ("linear" if args.nonlinearity == "MaxMin" else args.nonlinearity)
+
+        if args.init == "CLT_init":
+            fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
+            fan = fan * (1 - args.prune_rate)
+            gain = nn.init.calculate_gain(nonlinearity_name)
+            std = gain * math.sqrt(2 * math.pi) / fan
+
+            c_out = conv.weight.data.shape[0] // 2
+            c_in = conv.weight.data.shape[1] // 2
+            with torch.no_grad():
+                conv.weight.data.normal_(0, std)
+                conv.weight.data = torch.abs_(conv.weight.data)
+                conv.weight.data[:c_in, c_out:, :, :] *= -1
+                conv.weight.data[c_in:, :c_out, :, :] *= -1
+
+        if args.init == "short_warmup":
+            fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
+            fan = fan * (1 - args.prune_rate)
+            gain = nn.init.calculate_gain(nonlinearity_name)
+            std = gain * math.sqrt(2 * math.pi) / fan
+            with torch.no_grad():
+                conv.weight.data.normal_(0, std)
+
         if args.init == "one_lipschitz_unsigned_constant":
 
             fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
