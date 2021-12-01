@@ -114,7 +114,7 @@ class Builder(object):
                 conv.weight.data[:c_in, c_out:, :, :] *= -1
                 conv.weight.data[c_in:, :c_out, :, :] *= -1
 
-        if args.init == "short_warmup":
+        elif args.init == "short_warmup":
             fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
             fan = fan * (1 - args.prune_rate)
             gain = nn.init.calculate_gain(nonlinearity_name)
@@ -122,7 +122,7 @@ class Builder(object):
             with torch.no_grad():
                 conv.weight.data.normal_(0, std)
 
-        if args.init == "one_lipschitz_unsigned_constant":
+        elif args.init == "one_lipschitz_unsigned_constant":
 
             fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
             fan = fan * (1 - args.prune_rate)
