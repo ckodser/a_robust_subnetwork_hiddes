@@ -221,7 +221,8 @@ class LipschitzSubnetConv(SubnetConv):
         self.lipschitz = 1
 
     def forward(self, x):
-        w = Projection.apply(self.clamped_scores, self.prune_rate, self.weight, self.lipschitz)
+        subnet = GetLipschitzSubnet.apply(self.clamped_scores, self.prune_rate, self.weight, self.lipschitz)
+        w = self.weight * subnet
         x = F.conv2d(
             x, w, self.bias, self.stride, self.padding, self.dilation, self.groups
         )
@@ -240,21 +241,3 @@ class FixedFixFanInSubnetConv(FixedSubnetConv):
             flat_oup[i, idx[i, p:]] = 1
         self.scores = torch.nn.Parameter(output)
         self.scores.requires_grad = False
-
-
-class Projection(GetSubnet):
-    @staticmethod
-    def forward(ctx, scores, k, weight, lipschitz):
-        # Get the subnetwork by sorting the scores for each neuron and using the tops till weights sum reach lipschitz
-        goodness = scores#torch.div(scores, torch.abs(weight)) #-torch.abs(weight)#scores
-        sorted_goodness, idx = goodness.flatten(start_dim=1).sort(descending=True)
-        ordered_weight = torch.abs(torch.gather(weight.flatten(start_dim=1), dim=1, index=idx))
-        weight_sum = torch.cumsum(ordered_weight, dim=1)
-        out = torch.zeros_like(sorted_goodness)
-        out.scatter_(dim=1, index=idx, src=(weight_sum <= lipschitz).float())
-        return out.reshape(scores.shape)*weight
-
-    @staticmethod
-    def backward(ctx, g):
-        # send the gradient g straight-through on the backward pass.
-        return g, None, None, None
