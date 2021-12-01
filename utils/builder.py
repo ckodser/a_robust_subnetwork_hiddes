@@ -115,8 +115,7 @@ class Builder(object):
                 conv.weight.data[c_in:, :c_out, :, :] *= -1
 
         elif args.init == "short_warmup":
-            fan = nn.init._calculate_correct_fan(conv.weight, args.mode)
-            fan = fan * (1 - args.prune_rate)
+            fan = conv.weight.shape[1]*conv.weight.shape[2]*conv.weight.shape[3]
             gain = nn.init.calculate_gain(nonlinearity_name)
             std = gain * math.sqrt(2 * math.pi) / fan
             with torch.no_grad():
